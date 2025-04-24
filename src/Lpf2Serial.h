@@ -22,10 +22,10 @@ struct Lpf2Message
 class Lpf2Parser
 {
 public:
-    Lpf2Parser(Stream *serial, bool hwSerial) : m_serial(serial), buffer(256), hwSerial(hwSerial) {}
+    Lpf2Parser(Stream *serial) : m_serial(serial), buffer(256) {}
 
     void begin(int rxPin, int txPin);
-    void update();
+    std::vector<Lpf2Message> update();
 
 private:
     void sendACK(bool NACK = false);
@@ -36,14 +36,9 @@ private:
 
 private:
     Stream *m_serial;
-    HardwareSerial *m_hwSerial;
-    SoftwareSerial *m_swSerial;
     std::vector<uint8_t> buffer;
     bool hwSerial;
-    bool deviceInited = false;
     uint8_t checksum;
-
-    void parseMessage(const Lpf2Message &raw);
 };
 
 #endif

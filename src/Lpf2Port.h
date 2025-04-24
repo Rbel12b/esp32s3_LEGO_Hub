@@ -6,6 +6,7 @@
 #include <Stream.h>
 #include <HardwareSerial.h>
 #include <SoftwareSerial.h>
+#include "Lpf2Const.h"
 
 class Lpf2Port
 {
@@ -24,6 +25,22 @@ private:
     Stream *m_serial;
     HardwareSerial *m_hwSerial;
     SoftwareSerial *m_swSerial;
+
+    enum class LPF2_STATUS{
+        /* Something bad happened. */
+        STATUS_ERR,
+        /* Waiting for data that looks like LEGO UART protocol. */
+        STATUS_SYNCING,
+        /* Reading device info before changing baud rate. */
+        STATUS_INFO,
+        /* ACK received, delay changing baud rate. */
+        STATUS_ACK,
+        /* Ready to send commands and receive data. */
+        STATUS_DATA,
+    };
+
+    LPF2_STATUS m_status = LPF2_STATUS::STATUS_INFO;
+    DeviceType m_deviceType = DeviceType::UNKNOWNDEVICE;
 };
 
 #endif

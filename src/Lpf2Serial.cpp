@@ -4,21 +4,11 @@
 void Lpf2Parser::begin(int rxPin, int txPin)
 {
     buffer.clear();
-    if (hwSerial)
-    {
-        m_hwSerial = static_cast<HardwareSerial *>(m_serial);
-        m_hwSerial->begin(2400, SERIAL_8N1, rxPin, txPin);
-    }
-    else
-    {
-        m_swSerial = static_cast<SoftwareSerial *>(m_serial);
-        m_swSerial->begin(2400, EspSoftwareSerial::SWSERIAL_8N1, rxPin, txPin);
-    }
-    deviceInited = false;
 }
 
-void Lpf2Parser::update()
+std::vector<Lpf2Message> Lpf2Parser::update()
 {
+    std::vector<Lpf2Message> messages;
     while (m_serial->available())
     {
         uint8_t b = m_serial->read();
@@ -39,7 +29,7 @@ void Lpf2Parser::update()
         if (b == BYTE_ACK || b == BYTE_NACK || b == BYTE_SYNC)
         {
             message.system = true;
-            parseMessage(message);
+            messages.push_back(message);
             buffer.erase(buffer.begin());
             continue;
         }
@@ -84,10 +74,11 @@ void Lpf2Parser::update()
             continue;
         }
 
-        parseMessage(message);
+        messages.push_back(message);
 
         buffer.erase(buffer.begin(), buffer.begin() + message.length + 2);
     }
+    return messages;
 }
 
 void Lpf2Parser::sendACK(bool NACK)
@@ -103,11 +94,6 @@ void Lpf2Parser::resetChecksum()
 void Lpf2Parser::computeChecksum(uint8_t b)
 {
     checksum ^= b;
-}
-
-void Lpf2Parser::parseMessage(const Lpf2Message &msg)
-{
-    printMessage(msg);
 }
 
 void Lpf2Parser::printMessage(const Lpf2Message &msg)
