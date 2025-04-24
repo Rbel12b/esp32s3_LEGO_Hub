@@ -68,7 +68,6 @@ std::vector<Lpf2Message> Lpf2Parser::update()
         if (b != getChecksum())
         {
             log_d("Checksum mismatch: 0x%02X != 0x%02X", b, getChecksum());
-            Serial.print("    ");
             printMessage(message);
             buffer.erase(buffer.begin());
             continue;

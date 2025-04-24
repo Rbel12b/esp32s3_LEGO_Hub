@@ -24,4 +24,29 @@
 #define   GET_MESSAGE_LENGTH(B)         (1 << ((B >> 3) & 0x07))
 
 #define   MAKE_CMD_COMMAND(C,LC)        (MESSAGE_CMD + (C & 0x07) + ((LC & 0x07) << 3))
+
+// SECOND INFO BYTE
+
+#define   INFO_NAME                     0x00    // INFO command - NAME    (device name)
+#define   INFO_RAW                      0x01    // INFO command - RAW     (device RAW value span)
+#define   INFO_PCT                      0x02    // INFO command - PCT     (device PCT value span)
+#define   INFO_SI                       0x03    // INFO command - SI      (device SI  value span)
+#define   INFO_UNITS                    0x04    // INFO command - UNITS   (device SI  unit symbol)
+#define   INFO_MAPPING                  0x05    // INFO command - MAPPING (input/output value type flags)
+#define   INFO_MODE_COMBOS              0x06    // INFO command - COMBOS  (mode combinations - LPF2-only)
+#define   INFO_UNK7                     0x07    // INFO command - unknown (LPF2-only)
+#define   INFO_UNK8                     0x08    // INFO command - unknown (LPF2-only)
+#define   INFO_UNK9                     0x09    // INFO command - unknown (LPF2-only)
+#define   INFO_UNK10                    0x0a    // INFO command - unknown (LPF2-only)
+#define   INFO_UNK11                    0x0b    // INFO command - unknown (LPF2-only)
+#define   INFO_UNK12                    0x0c    // INFO command - unknown (LPF2-only)
+#define   INFO_MODE_PLUS_8              0x20    // Bit flag used in powered up devices to indicate that the mode is 8 + the mode specified in the first byte
+#define   INFO_FORMAT                   0x80    // INFO command - FORMAT  (device data sets and format)
+
+// INFO_FORMAT formats
+#define   DATA8                         0x00    // 8-bit signed integer
+#define   DATA16                        0x01    // 16-bit little-endian signed integer
+#define   DATA32                        0x02    // 32-bit little-endian signed integer
+#define   DATAF                         0x03    // 32-bit little-endian IEEE 754 floating point
+
 #endif
