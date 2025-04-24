@@ -49,6 +49,11 @@ void Lpf2Parser::update()
         }
 
         message.length = GET_MESSAGE_LENGTH(b);
+
+        if (GET_MESSAGE_TYPE(message.header) == MESSAGE_INFO)
+        {
+            message.length++; // +1 command byte
+        }
         if (buffer.size() < message.length + 2)
         {
             break;
@@ -107,11 +112,7 @@ void Lpf2Parser::parseMessage(const Lpf2Message &msg)
 
 void Lpf2Parser::printMessage(const Lpf2Message &msg)
 {
-    Serial.print("[LPF2] chks: 0x");
-    if (msg.checksum < 0x10)
-        Serial.print("0");
-    Serial.print(msg.checksum, HEX);
-    Serial.print(", ");
+    Serial.print("[LPF2] ");
     if (msg.system)
     {
         Serial.print("System Message: ");
@@ -153,5 +154,9 @@ void Lpf2Parser::printMessage(const Lpf2Message &msg)
         Serial.print(b, HEX);
         Serial.print(" ");
     }
+    Serial.print(", c: 0x");
+    if (msg.checksum < 0x10)
+        Serial.print("0");
+    Serial.print(msg.checksum, HEX);
     Serial.println();
 }
