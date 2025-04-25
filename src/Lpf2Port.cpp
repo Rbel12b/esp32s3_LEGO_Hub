@@ -96,14 +96,16 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
     }
     case MESSAGE_SYS:
     {
-        log_d("System message: 0x%02X", msg.header);
         switch (msg.header)
         {
         case BYTE_ACK:
             if (m_status == LPF2_STATUS::STATUS_INFO)
             {
-                log_d("ACK received waiting for SYNC");
-                m_status = LPF2_STATUS::STATUS_ACK;
+                log_d("ACK received.");
+                m_status = LPF2_STATUS::STATUS_DATA;
+                sendACK();
+                log_d("Changing speed to %i baud", baud);
+                changeBaud(baud);
             }
             else if (m_status == LPF2_STATUS::STATUS_ERR)
             {
@@ -112,14 +114,6 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
             }
             break;
         case BYTE_SYNC:
-            if (m_status == LPF2_STATUS::STATUS_ACK)
-            {
-                log_d("SYNC receive, sending ACK");
-                m_status = LPF2_STATUS::STATUS_SYNCING;
-                sendACK();
-                log_d("Changing speed to %i baud", baud);
-                changeBaud(baud);
-            }
             break;
         
         default:
@@ -132,7 +126,7 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
         if (m_status == LPF2_STATUS::STATUS_SYNCING)
         {
             m_status = LPF2_STATUS::STATUS_DATA;
-            log_d("Succesfully changeg speed.");
+            log_d("Succesfully changed speed.");
         }
         else if (m_status != LPF2_STATUS::STATUS_DATA)
         {
@@ -140,6 +134,10 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
             break;
         }
         break;
+    }
+    default:
+    {
+        log_e("Unknown message type: 0x%02X", msg.msg);
     }
     }
 }
@@ -152,6 +150,7 @@ void Lpf2Port::parseMessageCMD(const Lpf2Message &msg)
     {
         m_deviceType = (DeviceType)msg.data[0];
         m_status = LPF2_STATUS::STATUS_INFO;
+        nextModeExt = false;
         break;
     }
     case CMD_MODES:
@@ -184,6 +183,11 @@ void Lpf2Port::parseMessageCMD(const Lpf2Message &msg)
     }
     case CMD_VERSION:
     {
+        break;
+    }
+    case CMD_EXT_MODE:
+    {
+        nextModeExt = true;
         break;
     }
     default:

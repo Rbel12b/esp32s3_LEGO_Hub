@@ -63,6 +63,7 @@ public:
     uint32_t baud = 2400;
     uint16_t modeCombos[16];
     uint8_t comboNum = 0;
+    bool nextModeExt = false;
 
 private:
     static void taskEntryPoint(void* pvParameters);

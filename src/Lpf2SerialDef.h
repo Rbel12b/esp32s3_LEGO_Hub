@@ -4,7 +4,7 @@
 
 #define   BYTE_SYNC                     0x00                            // Synchronisation byte
 #define   BYTE_ACK                      0x04                            // Acknowledge byte
-#define   BYTE_NACK                     0x02                            // Not acknowledge byte
+#define   BYTE_NACK                     0x02                            // Not acknowledge byte (keep-alive)
 
 #define   MESSAGE_SYS                   0x00                            // System message
 #define   MESSAGE_CMD                   0x40                            // Command message
@@ -17,6 +17,7 @@
 #define   CMD_SPEED                     0x02                            // CMD command - SPEED    (maximun communication speed)
 #define   CMD_SELECT                    0x03                            // CMD command - SELECT   (select mode)
 #define   CMD_WRITE                     0x04                            // CMD command - WRITE    (write to device)
+#define   CMD_EXT_MODE                  0x06                            // CMD command - EXT_MODE (value will be added to mode in CMD_WRITE_DATA - LPF2 only)
 #define   CMD_VERSION                   0x07                            // CMD command - VERSION  (device firmware and hardware versions)
 #define   GET_CMD_COMMAND(B)            (B & 0x07)                      // Get CMD command
 
