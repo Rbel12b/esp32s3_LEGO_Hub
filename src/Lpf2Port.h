@@ -38,7 +38,7 @@ public:
         float SImin = 0.0f, SImax = 1023.0f;
         bool negativePCT = false;
         std::string unit;
-        typedef union mapping
+        union mapping
         {
             struct
             {

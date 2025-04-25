@@ -13,5 +13,10 @@ void setup()
 void loop()
 {
     vTaskDelay(1000);
-    // put your main code here, to run repeatedly:
+    log_i("Device: 0x%02X", port0.m_deviceType);
+    log_i("Speed: %u", port0.baud);
+    for (int i = 0; i < port0.modes; i++)
+    {
+        log_i("Mode %i: %s", i, port0.modeData[i].name.c_str());
+    }
 }
