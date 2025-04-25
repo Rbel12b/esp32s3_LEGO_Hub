@@ -25,6 +25,7 @@ void Lpf2Port::init()
         1,
         nullptr);
     modes = views = 0;
+    comboNum = 0;
 }
 
 void Lpf2Port::taskEntryPoint(void *pvParameters)
@@ -121,12 +122,21 @@ void Lpf2Port::parseMessageCMD(const Lpf2Message &msg)
         baud = msg.data[0] | (msg.data[1] << 8) | (msg.data[2] << 16) | (msg.data[3] << 24);
         break;
     }
+    case CMD_VERSION:
+    {
+        break;
+    }
+    default:
+    {
+        log_w("Unknown command: 0x%02X", msg.cmd);
+        break;
+    }
     }
 }
 
 void Lpf2Port::parseMessageInfo(const Lpf2Message &msg)
 {
-    switch (msg.data[0] & 0xF)
+    switch (msg.data[0] & 0xDF)
     {
     case INFO_NAME:
     {
@@ -219,6 +229,44 @@ void Lpf2Port::parseMessageInfo(const Lpf2Message &msg)
         }
         modeData[mode].in.val = msg.data[1];
         modeData[mode].out.val = msg.data[2];
+        break;
+    }
+    case INFO_MODE_COMBOS:
+    {
+        uint8_t num = (msg.length - 1) / 2;
+        if (num > 15)
+        {
+            break;
+        }
+        for (int i = 0; i < num; i++)
+        {
+            std::memcpy(&modeCombos[num], msg.data.data() + 1 + (i * 2), 2);
+            if (comboNum == 0 && modeCombos[num] == 0)
+            {
+                comboNum = i;
+            }
+        }
+    }
+    case INFO_FORMAT:
+    {
+        uint8_t mode = GET_MODE(msg.cmd) + ((msg.data[0] & INFO_MODE_PLUS_8) ? 8 : 0);
+        if (mode >= modes || msg.length < 5)
+        {
+            break;
+        }
+        modeData[mode].data_sets = msg.data[1];
+        modeData[mode].format = msg.data[2];
+        modeData[mode].figures = msg.data[3];
+        modeData[mode].decimals = msg.data[4];
+        if (mode == (modes - 1))
+        {
+            m_status = LPF2_STATUS::STATUS_WAIT_ACK;
+        }
+        break;
+    }
+    default:
+    {
+        log_w("Unknown info: 0x%02X", msg.data[0]);
         break;
     }
     }

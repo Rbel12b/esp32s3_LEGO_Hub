@@ -24,6 +24,8 @@ public:
         STATUS_SYNCING,
         /* Reading device info before changing baud rate. */
         STATUS_INFO,
+        /* info received, waiting for ack. */
+        STATUS_WAIT_ACK,
         /* ACK received, delay changing baud rate. */
         STATUS_ACK,
         /* Ready to send commands and receive data. */
@@ -53,6 +55,7 @@ public:
             uint8_t val;
         };
         mapping in, out;
+        uint8_t data_sets, format, figures, decimals;
     };
 
     LPF2_STATUS m_status = LPF2_STATUS::STATUS_INFO;
@@ -60,6 +63,8 @@ public:
     uint8_t modes, views;
     std::vector<Mode> modeData;
     unsigned int baud = 2400;
+    uint16_t modeCombos[16];
+    uint8_t comboNum = 0;
 
 private:
     static void taskEntryPoint(void* pvParameters);

@@ -17,6 +17,7 @@
 #define   CMD_SPEED                     0x02                            // CMD command - SPEED    (maximun communication speed)
 #define   CMD_SELECT                    0x03                            // CMD command - SELECT   (select mode)
 #define   CMD_WRITE                     0x04                            // CMD command - WRITE    (write to device)
+#define   CMD_VERSION                   0x07                            // CMD command - VERSION  (device firmware and hardware versions)
 #define   GET_CMD_COMMAND(B)            (B & 0x07)                      // Get CMD command
 
 #define   GET_MODE(B)                   (B & 0x07)                      // Get mode
