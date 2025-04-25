@@ -24,8 +24,6 @@ public:
         STATUS_SYNCING,
         /* Reading device info before changing baud rate. */
         STATUS_INFO,
-        /* info received, waiting for ack. */
-        STATUS_WAIT_ACK,
         /* ACK received, delay changing baud rate. */
         STATUS_ACK,
         /* Ready to send commands and receive data. */
@@ -58,11 +56,11 @@ public:
         uint8_t data_sets, format, figures, decimals;
     };
 
-    LPF2_STATUS m_status = LPF2_STATUS::STATUS_INFO;
+    LPF2_STATUS m_status = LPF2_STATUS::STATUS_ERR;
     DeviceType m_deviceType = DeviceType::UNKNOWNDEVICE;
     uint8_t modes, views;
     std::vector<Mode> modeData;
-    unsigned int baud = 2400;
+    uint32_t baud = 2400;
     uint16_t modeCombos[16];
     uint8_t comboNum = 0;
 
@@ -72,6 +70,8 @@ private:
     void parseMessage(const Lpf2Message& msg);
     void parseMessageCMD(const Lpf2Message& msg);
     void parseMessageInfo(const Lpf2Message& msg);
+    void changeBaud(uint32_t baud);
+    void sendACK(bool NACK = false);
 
 private:
     uint8_t m_rxPin, m_txPin;

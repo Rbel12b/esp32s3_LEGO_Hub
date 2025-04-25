@@ -25,8 +25,9 @@ std::vector<Lpf2Message> Lpf2Parser::update()
         computeChecksum(b);
 
         message.header = b;
+        message.msg = GET_MESSAGE_TYPE(message.header);
 
-        if (b == BYTE_ACK || b == BYTE_NACK || b == BYTE_SYNC)
+        if (message.msg == MESSAGE_SYS)
         {
             message.system = true;
             messages.push_back(message);
@@ -78,11 +79,6 @@ std::vector<Lpf2Message> Lpf2Parser::update()
         buffer.erase(buffer.begin(), buffer.begin() + message.length + 2);
     }
     return messages;
-}
-
-void Lpf2Parser::sendACK(bool NACK)
-{
-    m_serial->write(NACK ? BYTE_NACK : BYTE_ACK);
 }
 
 void Lpf2Parser::resetChecksum()

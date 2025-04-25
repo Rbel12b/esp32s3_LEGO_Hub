@@ -28,7 +28,6 @@ public:
     std::vector<Lpf2Message> update();
 
 private:
-    void sendACK(bool NACK = false);
     void resetChecksum();
     void computeChecksum(uint8_t b);
     uint8_t getChecksum() { return checksum; }

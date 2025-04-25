@@ -36,7 +36,6 @@ void Lpf2Port::taskEntryPoint(void *pvParameters)
 
 void Lpf2Port::uartTask()
 {
-
     if (m_hwSerialNum >= 0)
     {
         m_hwSerial = static_cast<HardwareSerial *>(m_serial);
@@ -56,6 +55,10 @@ void Lpf2Port::uartTask()
 
     log_i("Initialization done, rx: %i, tx: %i", m_rxPin, m_txPin);
 
+    auto start = millis();
+
+    sendACK(true);
+
     while (1)
     {
         auto messages = parser.update();
@@ -66,6 +69,14 @@ void Lpf2Port::uartTask()
         }
 
         vTaskDelay(pdMS_TO_TICKS(1));
+
+        auto now = millis();
+
+        if (now - start >= 100 && m_status == LPF2_STATUS::STATUS_DATA)
+        {
+            start = now;
+            sendACK(true);
+        }
     }
 }
 
@@ -81,6 +92,54 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
     case MESSAGE_INFO:
     {
         parseMessageInfo(msg);
+        break;
+    }
+    case MESSAGE_SYS:
+    {
+        log_d("System message: 0x%02X", msg.header);
+        switch (msg.header)
+        {
+        case BYTE_ACK:
+            if (m_status == LPF2_STATUS::STATUS_INFO)
+            {
+                log_d("ACK received waiting for SYNC");
+                m_status = LPF2_STATUS::STATUS_ACK;
+            }
+            else if (m_status == LPF2_STATUS::STATUS_ERR)
+            {
+                sendACK(true);
+                log_d("ACK received in error state");
+            }
+            break;
+        case BYTE_SYNC:
+            if (m_status == LPF2_STATUS::STATUS_ACK)
+            {
+                log_d("SYNC receive, sending ACK");
+                m_status = LPF2_STATUS::STATUS_SYNCING;
+                sendACK();
+                log_d("Changing speed to %i baud", baud);
+                changeBaud(baud);
+            }
+            break;
+        
+        default:
+            break;
+        }
+        break;
+    }
+    case MESSAGE_DATA:
+    {
+        if (m_status == LPF2_STATUS::STATUS_SYNCING)
+        {
+            m_status = LPF2_STATUS::STATUS_DATA;
+            log_d("Succesfully changeg speed.");
+        }
+        else if (m_status != LPF2_STATUS::STATUS_DATA)
+        {
+            log_w("Received data message outside data phase.");
+            break;
+        }
+        break;
     }
     }
 }
@@ -92,6 +151,7 @@ void Lpf2Port::parseMessageCMD(const Lpf2Message &msg)
     case CMD_TYPE:
     {
         m_deviceType = (DeviceType)msg.data[0];
+        m_status = LPF2_STATUS::STATUS_INFO;
         break;
     }
     case CMD_MODES:
@@ -258,10 +318,6 @@ void Lpf2Port::parseMessageInfo(const Lpf2Message &msg)
         modeData[mode].format = msg.data[2];
         modeData[mode].figures = msg.data[3];
         modeData[mode].decimals = msg.data[4];
-        if (mode == (modes - 1))
-        {
-            m_status = LPF2_STATUS::STATUS_WAIT_ACK;
-        }
         break;
     }
     default:
@@ -270,4 +326,23 @@ void Lpf2Port::parseMessageInfo(const Lpf2Message &msg)
         break;
     }
     }
+}
+
+void Lpf2Port::changeBaud(uint32_t baud)
+{
+    if (m_hwSerialNum >= 0)
+    {
+        m_hwSerial = static_cast<HardwareSerial *>(m_serial);
+        m_hwSerial->updateBaudRate(baud);
+    }
+    else
+    {
+        m_swSerial = static_cast<SoftwareSerial *>(m_serial);
+        m_swSerial->begin(baud, EspSoftwareSerial::SWSERIAL_8N1, m_rxPin, m_txPin);
+    }
+}
+
+void Lpf2Port::sendACK(bool NACK)
+{
+    m_serial->write(NACK ? BYTE_NACK : BYTE_ACK);
 }
