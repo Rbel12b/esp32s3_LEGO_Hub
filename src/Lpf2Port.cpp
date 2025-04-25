@@ -320,9 +320,9 @@ void Lpf2Port::parseMessageInfo(const Lpf2Message &msg)
         }
         modeData[mode].name = name;
         i++;
-        if (i < msg.length)
+        if ((i + 6) <= msg.length)
         {
-            // TODO: implement flag parsing
+            std::memcpy(&modeData[mode].flags.val, msg.data.data() + i, 6);
         }
         break;
     }

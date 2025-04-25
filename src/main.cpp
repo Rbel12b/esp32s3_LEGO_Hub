@@ -35,9 +35,14 @@ void loop()
         Serial.printf("\tDecimals: %i\n", port0.modeData[i].decimals);
         Serial.printf("\tnegative percentage: %s\n", port0.modeData[i].negativePCT ? "true": "false");
         auto in = port0.modeData[i].in;
-        Serial.printf("\tin: (null: %i, mapping 2.0: %i, abs: %i, rel: %i, dis: %i)\n", in.nullSupport, in.mapping2, in.abs, in.rel, in.dis);
+        Serial.printf("\tin: 0x%02X (null: %i, mapping 2.0: %i, abs: %i, rel: %i, dis: %i)\n",
+            in.val, in.nullSupport, in.mapping2, in.abs, in.rel, in.dis);
         auto out = port0.modeData[i].out;
-        Serial.printf("\tout: (null: %i, mapping 2.0: %i, abs: %i, rel: %i, dis: %i)\n", out.nullSupport, out.mapping2, out.abs, out.rel, out.dis);
+        Serial.printf("\tout: 0x%02X (null: %i, mapping 2.0: %i, abs: %i, rel: %i, dis: %i)\n",
+            in.val, out.nullSupport, out.mapping2, out.abs, out.rel, out.dis);
+        auto flags = port0.modeData[i].flags;
+        Serial.printf("\tFlags: 0x%012X (speed: %i, apos: %i, power: %i, motor: %i, pin1: %i, pin2: %i, calib: %i, power12: %i)\n",
+            flags.speed, flags.apos, flags.power, flags.motor, flags.pin1, flags.pin2, flags.calib, flags.uses_power12);
         Serial.print("Raw:");
         for (int n = 0; n < port0.modeData[i].rawData.size(); n++)
         {

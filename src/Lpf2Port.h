@@ -38,23 +38,65 @@ public:
         float SImin = 0.0f, SImax = 1023.0f;
         bool negativePCT = false;
         std::string unit;
-        union mapping
-        {
-            struct
-            {
-                uint8_t nullSupport : 1;
-                uint8_t  : 1;
-                uint8_t mapping2 : 1;
-                uint8_t abs : 1;
-                uint8_t rel : 1;
-                uint8_t dis : 1;
-                uint8_t  : 2;
-            };
+        union mapping {
             uint8_t val;
+            struct {
+                uint8_t unused_0 : 1;     // Bit 0
+                uint8_t unused_1 : 1;     // Bit 1
+                uint8_t dis      : 1;     // Bit 2
+                uint8_t rel      : 1;     // Bit 3
+                uint8_t abs      : 1;     // Bit 4
+                uint8_t unused_5 : 1;     // Bit 5
+                uint8_t mapping2 : 1;     // Bit 6
+                uint8_t nullSupport : 1;  // Bit 7
+            };
         };
         mapping in, out;
         uint8_t data_sets, format, figures, decimals;
         std::vector<uint8_t> rawData;
+        union __attribute__((packed)) {
+            uint64_t val;
+            struct {
+                // Byte 0
+                uint64_t speed     : 1;
+                uint64_t apos      : 1;
+                uint64_t pos       : 1;
+                uint64_t unused_03 : 1;
+                uint64_t power     : 1;
+                uint64_t motor     : 1;
+                uint64_t pin1      : 1;
+                uint64_t pin2      : 1;
+        
+                // Byte 1
+                uint64_t unused_10 : 1;
+                uint64_t unused_11 : 1;
+                uint64_t unused_12 : 1;
+                uint64_t unused_13 : 1;
+                uint64_t unused_14 : 1;
+                uint64_t unused_15 : 1;
+                uint64_t calib     : 1;
+                uint64_t unused_17 : 1;
+        
+                // Byte 2
+                uint64_t unused_20 : 8;
+        
+                // Byte 3
+                uint64_t unused_30 : 8;
+        
+                // Byte 4
+                uint64_t uses_power12 : 1;
+                uint64_t unused_41     : 1;
+                uint64_t unknown_42    : 1;
+                uint64_t unused_43     : 1;
+                uint64_t unused_44     : 1;
+                uint64_t unused_45     : 1;
+                uint64_t unused_46     : 1;
+                uint64_t unused_47     : 1;
+        
+                // Byte 5
+                uint64_t unknown_50    : 8;
+            };
+        } flags;
     };
 
     LPF2_STATUS m_status = LPF2_STATUS::STATUS_ERR;
