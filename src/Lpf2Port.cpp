@@ -117,29 +117,14 @@ bool Lpf2Port::deviceIsAbsMotor(DeviceType id) {
     }
 }
 
-void Lpf2Port::sendMessage(std::vector<uint8_t> msg)
+void Lpf2Port::setMode(uint8_t num)
 {
-    m_serial->write(msg.data(), msg.size());
-}
-
-std::vector<uint8_t> Lpf2Port::makeMessage(uint8_t header, std::vector<uint8_t> msg)
-{
-    std::vector<uint8_t> m;
-    m.reserve(msg.size() + 2);
-    m.push_back(header);
-    m.insert(m.end(), msg.begin(), msg.end());
+    uint8_t header = MESSAGE_CMD | CMD_SELECT;
     uint8_t checksum = header ^ 0xFF;
-    for (int i = 0; i < msg.size(); i++)
-    {
-        checksum ^= msg[i];
-    }
-    m.push_back(checksum);
-    return m;
-}
-
-void Lpf2Port::setMode(ModeNum num)
-{
-    sendMessage(makeMessage(MESSAGE_CMD | CMD_SELECT, std::vector<uint8_t>{(uint8_t)num}));
+    checksum ^= (uint8_t)num;
+    m_serial->write(header);
+    m_serial->write((uint8_t)num);
+    m_serial->write(checksum);
 }
 
 ModeNum Lpf2Port::getDefaultMode(DeviceType id) {
@@ -150,7 +135,6 @@ ModeNum Lpf2Port::getDefaultMode(DeviceType id) {
 
     switch (id) {
         case DeviceType::COLOR_DISTANCE_SENSOR:
-        case DeviceType::TECHNIC_COLOR_SENSOR:
             return ModeNum::COLOR_DISTANCE_SENSOR__RGB_I;
         default:
             return ModeNum::_DEFAULT;
@@ -202,32 +186,32 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
     }
     case MESSAGE_DATA:
     {
-        if (m_status == LPF2_STATUS::STATUS_SYNCING)
-        {
-            m_status = LPF2_STATUS::STATUS_DATA;
-            log_d("Succesfully changed speed.");
-        }
-        else if (m_status != LPF2_STATUS::STATUS_DATA)
-        {
-            log_w("Received data message outside data phase.");
-            break;
-        }
         uint8_t mode = GET_MODE(msg.header);
+        
         if (nextModeExt)
         {
             mode += 8;
             nextModeExt = false;
         }
+
+        if (mode >= modes)
+        {
+            break;
+        }
+        
         uint8_t size = modeData[mode].data_sets * getDataSize(modeData[mode].format);
+
         if (size != modeData[mode].rawData.size())
         {
-            modeData[mode].rawData.resize(size);
+            modeData[mode].rawData.resize(size, 0); // Initialize resized elements to 0
         }
+
         uint8_t readLen = size;
         if (msg.length < size)
         {
             readLen = msg.length;
         }
+        
         for (int i = 0; i < readLen; i++)
         {
             modeData[mode].rawData[i] = msg.data[i];
@@ -286,7 +270,10 @@ void Lpf2Port::parseMessageCMD(const Lpf2Message &msg)
     }
     case CMD_EXT_MODE:
     {
-        nextModeExt = true;
+        if (!msg.data.empty() && msg.data[0])
+        {
+            nextModeExt = true;
+        }
         break;
     }
     default:
@@ -320,9 +307,9 @@ void Lpf2Port::parseMessageInfo(const Lpf2Message &msg)
         }
         modeData[mode].name = name;
         i++;
-        if ((i + 6) <= msg.length)
+        if ((i + 6) <= msg.length && msg.data.size() >= static_cast<size_t>(i + 6))
         {
-            std::memcpy(&modeData[mode].flags.val, msg.data.data() + i, 6);
+            std::memcpy(&modeData[mode].flags.bytes, msg.data.data() + i, 6);
         }
         break;
     }
@@ -333,8 +320,11 @@ void Lpf2Port::parseMessageInfo(const Lpf2Message &msg)
         {
             break;
         }
-        std::memcpy(&modeData[mode].min, msg.data.data() + 1, 4);
-        std::memcpy(&modeData[mode].max, msg.data.data() + 5, 4);
+        if (msg.data.size() >= 9)
+        {
+            std::memcpy(&modeData[mode].min, msg.data.data() + 1, 4);
+            std::memcpy(&modeData[mode].max, msg.data.data() + 5, 4);
+        }
         break;
     }
     case INFO_PCT:

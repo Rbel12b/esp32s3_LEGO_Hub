@@ -43,7 +43,7 @@ enum class DeviceType
     TECHNIC_LARGE_ANGULAR_MOTOR_GREY = 76   // Mindstorms
 };
 
-enum class ModeNum : uint8_t
+enum ModeNum
 {
     _DEFAULT = 0,
     MOTOR__CALIB = 0,
