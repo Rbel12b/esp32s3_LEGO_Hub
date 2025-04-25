@@ -54,6 +54,7 @@ public:
         };
         mapping in, out;
         uint8_t data_sets, format, figures, decimals;
+        std::vector<uint8_t> rawData;
     };
 
     LPF2_STATUS m_status = LPF2_STATUS::STATUS_ERR;
@@ -67,12 +68,21 @@ public:
 
 private:
     static void taskEntryPoint(void* pvParameters);
+    
     void uartTask();
     void parseMessage(const Lpf2Message& msg);
     void parseMessageCMD(const Lpf2Message& msg);
     void parseMessageInfo(const Lpf2Message& msg);
     void changeBaud(uint32_t baud);
     void sendACK(bool NACK = false);
+
+    static uint8_t getDataSize(uint8_t format);
+    static ModeNum getDefaultMode(DeviceType id);
+    static bool deviceIsAbsMotor(DeviceType id);
+
+    void sendMessage(std::vector<uint8_t> msg);
+    std::vector<uint8_t> makeMessage(uint8_t header, std::vector<uint8_t> msg);
+    void setMode(ModeNum num);
 
 private:
     uint8_t m_rxPin, m_txPin;

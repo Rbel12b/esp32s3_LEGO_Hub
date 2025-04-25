@@ -80,6 +80,83 @@ void Lpf2Port::uartTask()
     }
 }
 
+uint8_t Lpf2Port::getDataSize(uint8_t format)
+{
+    switch (format)
+    {
+    case DATA8:
+        return 1;
+    
+    case DATA16:
+        return 2;
+
+    case DATA32:
+        return 4;
+
+    case DATAF:
+        return 4;
+    default:
+        break;
+    }
+    return 0;
+}
+
+bool Lpf2Port::deviceIsAbsMotor(DeviceType id) {
+    switch (id) {
+        case DeviceType::TECHNIC_LARGE_LINEAR_MOTOR:
+        case DeviceType::TECHNIC_XLARGE_LINEAR_MOTOR:
+        case DeviceType::TECHNIC_LARGE_ANGULAR_MOTOR:
+        case DeviceType::TECHNIC_LARGE_ANGULAR_MOTOR_GREY:
+        case DeviceType::TECHNIC_MEDIUM_ANGULAR_MOTOR:
+        case DeviceType::TECHNIC_MEDIUM_ANGULAR_MOTOR_GREY:
+        case DeviceType::MEDIUM_LINEAR_MOTOR:
+        case DeviceType::SIMPLE_MEDIUM_LINEAR_MOTOR:
+            return true;
+        default:
+            return false;
+    }
+}
+
+void Lpf2Port::sendMessage(std::vector<uint8_t> msg)
+{
+    m_serial->write(msg.data(), msg.size());
+}
+
+std::vector<uint8_t> Lpf2Port::makeMessage(uint8_t header, std::vector<uint8_t> msg)
+{
+    std::vector<uint8_t> m;
+    m.reserve(msg.size() + 2);
+    m.push_back(header);
+    m.insert(m.end(), msg.begin(), msg.end());
+    uint8_t checksum = header ^ 0xFF;
+    for (int i = 0; i < msg.size(); i++)
+    {
+        checksum ^= msg[i];
+    }
+    m.push_back(checksum);
+    return m;
+}
+
+void Lpf2Port::setMode(ModeNum num)
+{
+    sendMessage(makeMessage(MESSAGE_CMD | CMD_SELECT, std::vector<uint8_t>{(uint8_t)num}));
+}
+
+ModeNum Lpf2Port::getDefaultMode(DeviceType id) {
+
+    if (deviceIsAbsMotor(id)) {
+        return ModeNum::MOTOR__CALIB;
+    }
+
+    switch (id) {
+        case DeviceType::COLOR_DISTANCE_SENSOR:
+        case DeviceType::TECHNIC_COLOR_SENSOR:
+            return ModeNum::COLOR_DISTANCE_SENSOR__RGB_I;
+        default:
+            return ModeNum::_DEFAULT;
+    }
+}
+
 void Lpf2Port::parseMessage(const Lpf2Message &msg)
 {
     switch (msg.msg)
@@ -106,6 +183,8 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
                 sendACK();
                 log_d("Changing speed to %i baud", baud);
                 changeBaud(baud);
+                vTaskDelay(1);
+                setMode(getDefaultMode(m_deviceType));
             }
             else if (m_status == LPF2_STATUS::STATUS_ERR)
             {
@@ -132,6 +211,26 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
         {
             log_w("Received data message outside data phase.");
             break;
+        }
+        uint8_t mode = GET_MODE(msg.header);
+        if (nextModeExt)
+        {
+            mode += 8;
+            nextModeExt = false;
+        }
+        uint8_t size = modeData[mode].data_sets * getDataSize(modeData[mode].format);
+        if (size != modeData[mode].rawData.size())
+        {
+            modeData[mode].rawData.resize(size);
+        }
+        uint8_t readLen = size;
+        if (msg.length < size)
+        {
+            readLen = msg.length;
+        }
+        for (int i = 0; i < readLen; i++)
+        {
+            modeData[mode].rawData[i] = msg.data[i];
         }
         break;
     }
