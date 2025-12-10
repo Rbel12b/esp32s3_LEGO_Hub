@@ -46,7 +46,7 @@ enum class DeviceType
 enum ModeNum
 {
     _DEFAULT = 0,
-    MOTOR__CALIB = 0,
+    MOTOR__CALIB = 4,
     COLOR_DISTANCE_SENSOR__RGB_I = 5,
 };
 

@@ -51,13 +51,13 @@ void Lpf2Port::uartTask()
 
     parser.begin(m_rxPin, m_txPin);
 
-    vTaskDelay(pdMS_TO_TICKS(100));
-
     log_i("Initialization done, rx: %i, tx: %i", m_rxPin, m_txPin);
 
     auto start = millis();
 
     sendACK(true);
+
+    //requestSpeedChange(115200);
 
     while (1)
     {
@@ -75,6 +75,22 @@ void Lpf2Port::uartTask()
         if (now - start >= 100 && m_status == LPF2_STATUS::STATUS_DATA)
         {
             start = now;
+            sendACK(true);
+        }
+
+        if (m_status == LPF2_STATUS::STATUS_SPEED && now - m_timeStart > 1000)
+        {
+            changeBaud(2400);
+            m_status = LPF2_STATUS::STATUS_INFO;
+            log_d("Failed to change speed to 115200, going back to 2400.");
+            sendACK(true);
+        }
+
+        if (m_status == LPF2_STATUS::STATUS_DATA && now - m_timeStart > 1000)
+        {
+            changeBaud(2400);
+            m_status = LPF2_STATUS::STATUS_INFO;
+            log_d("Device disconnected.");
             sendACK(true);
         }
     }
@@ -127,6 +143,29 @@ void Lpf2Port::setMode(uint8_t num)
     m_serial->write(checksum);
 }
 
+void Lpf2Port::requestSpeedChange(uint32_t speed)
+{
+    uint8_t header = MESSAGE_CMD | CMD_SPEED | (2 << 3);
+    uint8_t checksum = header ^ 0xFF;
+    uint8_t b;
+    m_serial->write(header);
+    b = (speed & 0xFF) >> 0;
+    checksum ^= b;
+    m_serial->write(b);
+    b = (speed & 0xFF00) >> 8;
+    checksum ^= b;
+    m_serial->write(b);
+    b = (speed & 0xFF0000) >> 16;
+    checksum ^= b;
+    m_serial->write(b);
+    b = (speed & 0xFF000000) >> 24;
+    checksum ^= b;
+    m_serial->write(b);
+    m_serial->write(checksum);
+    m_status = LPF2_STATUS::STATUS_SPEED;
+    m_timeStart = millis();
+}
+
 ModeNum Lpf2Port::getDefaultMode(DeviceType id) {
 
     if (deviceIsAbsMotor(id)) {
@@ -143,6 +182,7 @@ ModeNum Lpf2Port::getDefaultMode(DeviceType id) {
 
 void Lpf2Port::parseMessage(const Lpf2Message &msg)
 {
+    m_timeStart = millis();
     switch (msg.msg)
     {
     case MESSAGE_CMD:
@@ -162,21 +202,34 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
         case BYTE_ACK:
             if (m_status == LPF2_STATUS::STATUS_INFO)
             {
-                log_d("ACK received.");
+                log_d("ACK received, waiting for sync.");
+                m_status = LPF2_STATUS::STATUS_ACK;
+                sendACK();
+            }
+            else if (m_status == LPF2_STATUS::STATUS_SPEED)
+            {
+                m_status = LPF2_STATUS::STATUS_INFO;
+                changeBaud(115200);
+                log_d("Succesfully changed speed to 115200 baud");
+            }
+            else if (m_status == LPF2_STATUS::STATUS_ERR)
+            {
+                sendACK(true);
+            }
+            break;
+        case BYTE_SYNC:
+            if (m_status == LPF2_STATUS::STATUS_ACK)
+            {
+                log_d("SYNC received.");
                 m_status = LPF2_STATUS::STATUS_DATA;
                 sendACK();
                 log_d("Changing speed to %i baud", baud);
                 changeBaud(baud);
                 vTaskDelay(1);
+                sendACK(true); //keep-alive
+                vTaskDelay(1);
                 setMode(getDefaultMode(m_deviceType));
             }
-            else if (m_status == LPF2_STATUS::STATUS_ERR)
-            {
-                sendACK(true);
-                log_d("ACK received in error state");
-            }
-            break;
-        case BYTE_SYNC:
             break;
         
         default:

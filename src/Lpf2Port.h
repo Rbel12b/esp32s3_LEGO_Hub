@@ -28,6 +28,8 @@ public:
         STATUS_ACK,
         /* Ready to send commands and receive data. */
         STATUS_DATA,
+        /* Requested speed change waiting for ACK. */
+        STATUS_SPEED,
     };
 
     class Mode
@@ -92,6 +94,7 @@ private:
     static bool deviceIsAbsMotor(DeviceType id);
 
     void setMode(uint8_t num);
+    void requestSpeedChange(uint32_t speed);
 
 private:
     uint8_t m_rxPin, m_txPin;
@@ -99,6 +102,8 @@ private:
     Stream *m_serial;
     HardwareSerial *m_hwSerial;
     SoftwareSerial *m_swSerial;
+
+    uint64_t m_timeStart = 0;
 };
 
 #endif

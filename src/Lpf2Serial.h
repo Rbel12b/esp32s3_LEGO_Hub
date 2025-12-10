@@ -26,12 +26,12 @@ public:
 
     void begin(int rxPin, int txPin);
     std::vector<Lpf2Message> update();
+    void printMessage(const Lpf2Message &msg);
 
 private:
     void resetChecksum();
     void computeChecksum(uint8_t b);
     uint8_t getChecksum() { return checksum; }
-    void printMessage(const Lpf2Message &msg);
 
 private:
     Stream *m_serial;
