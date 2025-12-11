@@ -23,8 +23,7 @@ class Lpf2Parser
 {
 public:
     Lpf2Parser(Stream *serial) : m_serial(serial), buffer(256) {}
-
-    void begin(int rxPin, int txPin);
+    
     std::vector<Lpf2Message> update();
     void printMessage(const Lpf2Message &msg);
 

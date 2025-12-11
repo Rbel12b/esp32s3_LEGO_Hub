@@ -1,11 +1,6 @@
 #include "Lpf2Serial.h"
 #include "Lpf2SerialDef.h"
 
-void Lpf2Parser::begin(int rxPin, int txPin)
-{
-    buffer.clear();
-}
-
 std::vector<Lpf2Message> Lpf2Parser::update()
 {
     std::vector<Lpf2Message> messages;
@@ -45,6 +40,7 @@ std::vector<Lpf2Message> Lpf2Parser::update()
         {
             message.length++; // +1 command byte
         }
+
         if (buffer.size() < message.length + 2)
         {
             break;

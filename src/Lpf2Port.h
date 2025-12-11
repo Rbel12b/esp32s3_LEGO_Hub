@@ -26,6 +26,10 @@ public:
         STATUS_INFO,
         /* ACK received, delay changing baud rate. */
         STATUS_ACK,
+        /* Data phase begin. Waiting for first packet*/
+        STATUS_DATA_START,
+        /* Data phase, first packed received, sending SELECT.*/
+        STATUS_DATA_RECEIVED,
         /* Ready to send commands and receive data. */
         STATUS_DATA,
         /* Requested speed change waiting for ACK. */
@@ -103,6 +107,9 @@ private:
     HardwareSerial *m_hwSerial;
     SoftwareSerial *m_swSerial;
 
+    /**
+     * Time of the last data received (millis since startup).
+     */
     uint64_t m_timeStart = 0;
 };
 

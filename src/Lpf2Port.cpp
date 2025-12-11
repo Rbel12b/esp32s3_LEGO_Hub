@@ -36,20 +36,19 @@ void Lpf2Port::taskEntryPoint(void *pvParameters)
 
 void Lpf2Port::uartTask()
 {
+    int baudRate = 115200;
     if (m_hwSerialNum >= 0)
     {
         m_hwSerial = static_cast<HardwareSerial *>(m_serial);
-        m_hwSerial->begin(2400, SERIAL_8N1, m_rxPin, m_txPin);
+        m_hwSerial->begin(baudRate, SERIAL_8N1, m_rxPin, m_txPin);
     }
     else
     {
         m_swSerial = static_cast<SoftwareSerial *>(m_serial);
-        m_swSerial->begin(2400, EspSoftwareSerial::SWSERIAL_8N1, m_rxPin, m_txPin);
+        m_swSerial->begin(baudRate, EspSoftwareSerial::SWSERIAL_8N1, m_rxPin, m_txPin);
     }
 
     Lpf2Parser parser(m_serial);
-
-    parser.begin(m_rxPin, m_txPin);
 
     log_i("Initialization done, rx: %i, tx: %i", m_rxPin, m_txPin);
 
@@ -65,34 +64,42 @@ void Lpf2Port::uartTask()
 
         for (const auto &msg : messages)
         {
+            parser.printMessage(msg);
             parseMessage(msg);
+
+            auto now = millis();
+
+            if (now - start >= 100 && (m_status == LPF2_STATUS::STATUS_DATA || m_status == LPF2_STATUS::STATUS_DATA_START))
+            {
+                start = now;
+                sendACK(true);
+            }
+
+            if (m_status == LPF2_STATUS::STATUS_SPEED && now - m_timeStart > 1000)
+            {
+                changeBaud(2400);
+                m_status = LPF2_STATUS::STATUS_INFO;
+                log_d("Failed to change speed to 115200, going back to 2400.");
+                sendACK(true);
+            }
+
+            if (m_status == LPF2_STATUS::STATUS_DATA && now - m_timeStart > 1000)
+            {
+                changeBaud(2400);
+                m_status = LPF2_STATUS::STATUS_INFO;
+                log_d("Device disconnected.");
+                sendACK(true);
+            }
+
+            if (m_status == LPF2_STATUS::STATUS_DATA_RECEIVED)
+            {
+                log_d("Setting default mode: %i", getDefaultMode(m_deviceType));
+                setMode(getDefaultMode(m_deviceType));
+                m_status = LPF2_STATUS::STATUS_DATA;
+            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(1));
-
-        auto now = millis();
-
-        if (now - start >= 100 && m_status == LPF2_STATUS::STATUS_DATA)
-        {
-            start = now;
-            sendACK(true);
-        }
-
-        if (m_status == LPF2_STATUS::STATUS_SPEED && now - m_timeStart > 1000)
-        {
-            changeBaud(2400);
-            m_status = LPF2_STATUS::STATUS_INFO;
-            log_d("Failed to change speed to 115200, going back to 2400.");
-            sendACK(true);
-        }
-
-        if (m_status == LPF2_STATUS::STATUS_DATA && now - m_timeStart > 1000)
-        {
-            changeBaud(2400);
-            m_status = LPF2_STATUS::STATUS_INFO;
-            log_d("Device disconnected.");
-            sendACK(true);
-        }
     }
 }
 
@@ -183,6 +190,10 @@ ModeNum Lpf2Port::getDefaultMode(DeviceType id) {
 void Lpf2Port::parseMessage(const Lpf2Message &msg)
 {
     m_timeStart = millis();
+    if (m_status == LPF2_STATUS::STATUS_DATA_START)
+    {
+        m_status = LPF2_STATUS::STATUS_DATA_RECEIVED;
+    }
     switch (msg.msg)
     {
     case MESSAGE_CMD:
@@ -221,14 +232,12 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
             if (m_status == LPF2_STATUS::STATUS_ACK)
             {
                 log_d("SYNC received.");
-                m_status = LPF2_STATUS::STATUS_DATA;
+                m_status = LPF2_STATUS::STATUS_DATA_START;
                 sendACK();
                 log_d("Changing speed to %i baud", baud);
                 changeBaud(baud);
                 vTaskDelay(1);
                 sendACK(true); //keep-alive
-                vTaskDelay(1);
-                setMode(getDefaultMode(m_deviceType));
             }
             break;
         
