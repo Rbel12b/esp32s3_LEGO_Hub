@@ -8,6 +8,94 @@
 #include <HardwareSerial.h>
 #include <SoftwareSerial.h>
 
+#define LPF2_LOG_LEVEL 0
+
+#if LPF2_LOG_LEVEL > 0
+#define LPF2_LOG_E log_e
+#define LPF2_DEBUG_EXPR_E(...) \
+    do                  \
+    {                   \
+        __VA_ARGS__;    \
+    } while (0)
+#else
+#define LPF2_LOG_E(...) \
+    do                  \
+    {                   \
+    } while (0)
+#define LPF2_DEBUG_EXPR_E(...) \
+    do                  \
+    {                   \
+    } while (0)
+#endif
+#if LPF2_LOG_LEVEL > 1
+#define LPF2_LOG_W log_w
+#define LPF2_DEBUG_EXPR_W(...) \
+    do                  \
+    {                   \
+        __VA_ARGS__;    \
+    } while (0)
+#else
+#define LPF2_LOG_W(...) \
+    do                  \
+    {                   \
+    } while (0)
+#define LPF2_DEBUG_EXPR_W(...) \
+    do                  \
+    {                   \
+    } while (0)
+#endif
+#if LPF2_LOG_LEVEL > 2
+#define LPF2_LOG_I log_i
+#define LPF2_DEBUG_EXPR_I(...) \
+    do                  \
+    {                   \
+        __VA_ARGS__;    \
+    } while (0)
+#else
+#define LPF2_LOG_I(...) \
+    do                  \
+    {                   \
+    } while (0)
+#define LPF2_DEBUG_EXPR_I(...) \
+    do                  \
+    {                   \
+    } while (0)
+#endif
+#if LPF2_LOG_LEVEL > 3
+#define LPF2_LOG_D log_d
+#define LPF2_DEBUG_EXPR_D(...) \
+    do                  \
+    {                   \
+        __VA_ARGS__;    \
+    } while (0)
+#else
+#define LPF2_LOG_D(...) \
+    do                  \
+    {                   \
+    } while (0)
+#define LPF2_DEBUG_EXPR_D(...) \
+    do                  \
+    {                   \
+    } while (0)
+#endif
+#if LPF2_LOG_LEVEL > 4
+#define LPF2_LOG_V log_v
+#define LPF2_DEBUG_EXPR_V(...) \
+    do                  \
+    {                   \
+        __VA_ARGS__;    \
+    } while (0)
+#else
+#define LPF2_LOG_V(...) \
+    do                  \
+    {                   \
+    } while (0)
+#define LPF2_DEBUG_EXPR_V(...) \
+    do                  \
+    {                   \
+    } while (0)
+#endif
+
 struct Lpf2Message
 {
     uint8_t header;

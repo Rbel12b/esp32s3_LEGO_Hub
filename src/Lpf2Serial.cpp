@@ -1,6 +1,9 @@
 #include "Lpf2Serial.h"
 #include "Lpf2SerialDef.h"
 
+#include <string>
+#include <format>
+
 std::vector<Lpf2Message> Lpf2Parser::update()
 {
     std::vector<Lpf2Message> messages;
@@ -64,7 +67,7 @@ std::vector<Lpf2Message> Lpf2Parser::update()
 
         if (b != getChecksum())
         {
-            log_d("Checksum mismatch: 0x%02X != 0x%02X", b, getChecksum());
+            LPF2_LOG_D("Checksum mismatch: 0x%02X != 0x%02X", b, getChecksum());
             printMessage(message);
             buffer.erase(buffer.begin());
             continue;
@@ -89,51 +92,36 @@ void Lpf2Parser::computeChecksum(uint8_t b)
 
 void Lpf2Parser::printMessage(const Lpf2Message &msg)
 {
-    Serial.print("[LPF2] ");
-    if (msg.system)
-    {
-        Serial.print("System Message: ");
-        switch (msg.header)
+    LPF2_DEBUG_EXPR_D(
+        std::string str;
+        if (msg.system)
         {
-        case BYTE_ACK:
-            Serial.println("ACK");
-            break;
-        case BYTE_NACK:
-            Serial.println("NACK");
-            break;
-        case BYTE_SYNC:
-            Serial.println("SYNC");
-            break;
-        default:
-            Serial.print("Unknown (0x");
-            Serial.print(msg.header, HEX);
-            Serial.println(")");
-            break;
+            str += "Sys: ";
+            switch (msg.header)
+            {
+            case BYTE_ACK:
+                str += "ACK";
+                break;
+            case BYTE_NACK:
+            str += "NACK";
+                break;
+            case BYTE_SYNC:
+                str += "SYNC";
+                break;
+            default:
+                str += std::format("Unknown (0x{:02X})", msg.header);
+                break;
+            }
+            return;
         }
-        return;
-    }
 
-    Serial.print("Header: 0x");
-    Serial.print(msg.header, HEX);
-    Serial.print(", Length: ");
-    Serial.print(msg.length);
-    Serial.print(", MsgType: 0x");
-    Serial.print(msg.msg, HEX);
-    Serial.print(", Cmd: 0x");
-    Serial.print(msg.cmd, HEX);
-    Serial.print(", Data: ");
+        str += std::format("Header: 0x{:02X}, Length: {}, MsgType: 0x{:02X}, Cmd: 0x{:02X}, Data: ", msg.header, msg.length, msg.msg, msg.cmd);
 
-    for (uint8_t b : msg.data)
-    {
-        Serial.print("0x");
-        if (b < 0x10)
-            Serial.print("0"); // Padding for single hex digit
-        Serial.print(b, HEX);
-        Serial.print(" ");
-    }
-    Serial.print(", c: 0x");
-    if (msg.checksum < 0x10)
-        Serial.print("0");
-    Serial.print(msg.checksum, HEX);
-    Serial.println();
+        for (uint8_t b : msg.data)
+        {
+            str += std::format("0x{:02X} ", b);
+        }
+        str += std::format(", C: 0x{:02X}", msg.checksum);
+        LPF2_LOG_D("%s", str.c_str());
+    );
 }

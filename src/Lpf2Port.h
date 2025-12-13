@@ -17,23 +17,30 @@ public:
 
     void init();
 
-    enum class LPF2_STATUS{
+    enum class LPF2_STATUS
+    {
         /* Something bad happened. */
         STATUS_ERR,
         /* Waiting for data that looks like LEGO UART protocol. */
         STATUS_SYNCING,
         /* Reading device info before changing baud rate. */
         STATUS_INFO,
-        /* ACK received, delay changing baud rate. */
-        STATUS_ACK,
-        /* Data phase begin. Waiting for first packet*/
-        STATUS_DATA_START,
-        /* Data phase, first packed received, sending SELECT.*/
-        STATUS_DATA_RECEIVED,
-        /* Ready to send commands and receive data. */
-        STATUS_DATA,
-        /* Requested speed change waiting for ACK. */
+        /* Waiting for ACK */
+        STATUS_ACK_WAIT,
+        /* Waiting for SYNC */
+        STATUS_SYNC_WAIT,
+        /* Sending ACK, for data phase begin */
+        STATUS_ACK_SENDING,
+        /* Sending speed change request */
+        STATUS_SPEED_CHANGE,
+        /* Speed change accepted */
         STATUS_SPEED,
+        /* Waiting for first data packet */
+        STATUS_DATA_RECEIVED,
+        /* First data packet received, sending setup data */
+        STATUS_DATA_START,
+        /* Normal data receiving state */
+        STATUS_DATA,
     };
 
     class Mode
@@ -44,52 +51,69 @@ public:
         float SImin = 0.0f, SImax = 1023.0f;
         bool negativePCT = false;
         std::string unit;
-        struct Mapping {
+        struct Mapping
+        {
             uint8_t val;
-        
+
             bool nullSupport() const { return val & (1 << 7); }
-            bool mapping2()    const { return val & (1 << 6); }
-            bool abs()         const { return val & (1 << 4); }
-            bool rel()         const { return val & (1 << 3); }
-            bool dis()         const { return val & (1 << 2); }
+            bool mapping2() const { return val & (1 << 6); }
+            bool abs() const { return val & (1 << 4); }
+            bool rel() const { return val & (1 << 3); }
+            bool dis() const { return val & (1 << 2); }
         };
         Mapping in, out;
         uint8_t data_sets = 0, format = 0, figures = 0, decimals = 0;
         std::vector<uint8_t> rawData;
-        struct Flags {
-            uint8_t bytes[6] = {0,0,0,0,0,0};
-        
-            bool speed()     const { return bytes[0] & (1 << 0); }
-            bool apos()      const { return bytes[0] & (1 << 1); }
-            bool pos()       const { return bytes[0] & (1 << 2); }
-            bool power()     const { return bytes[0] & (1 << 4); }
-            bool motor()     const { return bytes[0] & (1 << 5); }
-            bool pin1()      const { return bytes[0] & (1 << 6); }
-            bool pin2()      const { return bytes[0] & (1 << 7); }
-        
-            bool calib()     const { return bytes[1] & (1 << 6); }
-        
-            bool power12()   const { return bytes[4] & (1 << 0); }
+        struct Flags
+        {
+            uint8_t bytes[6] = {0, 0, 0, 0, 0, 0};
+
+            bool speed() const { return bytes[0] & (1 << 0); }
+            bool apos() const { return bytes[0] & (1 << 1); }
+            bool pos() const { return bytes[0] & (1 << 2); }
+            bool power() const { return bytes[0] & (1 << 4); }
+            bool motor() const { return bytes[0] & (1 << 5); }
+            bool pin1() const { return bytes[0] & (1 << 6); }
+            bool pin2() const { return bytes[0] & (1 << 7); }
+
+            bool calib() const { return bytes[1] & (1 << 6); }
+
+            bool power12() const { return bytes[4] & (1 << 0); }
         };
         Flags flags;
     };
 
+    static std::string formatValue(float value, const Mode &modeData);
+    std::string convertValue(Mode modeData);
+    std::string convertValue(size_t modeNum)
+    {
+        if (modeNum >= modeData.size())
+        {
+            return "<mode not found>";
+        }
+        return convertValue(modeData[modeNum]);
+    }
+
+    std::vector<Mode> modeData;
+
+private:
+
     LPF2_STATUS m_status = LPF2_STATUS::STATUS_ERR;
+    LPF2_STATUS m_new_status = LPF2_STATUS::STATUS_ERR;
     DeviceType m_deviceType = DeviceType::UNKNOWNDEVICE;
     uint8_t modes, views;
-    std::vector<Mode> modeData;
     uint32_t baud = 2400;
     uint16_t modeCombos[16];
     uint8_t comboNum = 0;
     bool nextModeExt = false;
 
 private:
-    static void taskEntryPoint(void* pvParameters);
-    
+    static void taskEntryPoint(void *pvParameters);
+
     void uartTask();
-    void parseMessage(const Lpf2Message& msg);
-    void parseMessageCMD(const Lpf2Message& msg);
-    void parseMessageInfo(const Lpf2Message& msg);
+    void parseMessage(const Lpf2Message &msg);
+    void parseMessageCMD(const Lpf2Message &msg);
+    void parseMessageInfo(const Lpf2Message &msg);
     void changeBaud(uint32_t baud);
     void sendACK(bool NACK = false);
 
@@ -99,6 +123,23 @@ private:
 
     void setMode(uint8_t num);
     void requestSpeedChange(uint32_t speed);
+
+    void resetDevice();
+
+    uint8_t process(unsigned long &start, unsigned long now);
+
+
+    /// Parse a signed 8-bit integer from raw bytes
+    static float parseData8(const uint8_t *ptr);
+
+    /// Parse a signed 16-bit little-endian integer from raw bytes
+    static float parseData16(const uint8_t *ptr);
+
+    /// Parse a signed 32-bit little-endian integer from raw bytes
+    static float parseData32(const uint8_t *ptr);
+
+    /// Parse a 32-bit IEEE-754 little-endian float
+    static float parseDataF(const uint8_t *ptr);
 
 private:
     uint8_t m_rxPin, m_txPin;

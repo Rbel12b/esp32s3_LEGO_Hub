@@ -1,6 +1,8 @@
 #include "Lpf2Port.h"
 #include <string>
 #include <cstring>
+#include <sstream>
+#include <iomanip>
 
 void Lpf2Port::init()
 {
@@ -19,10 +21,10 @@ void Lpf2Port::init()
     taskName += m_txPin;
     xTaskCreate(
         &Lpf2Port::taskEntryPoint, // Static entry point
-        "uartTask",
+        taskName.c_str(),          // Task name
         4096,
         this, // Pass this pointer
-        1,
+        5,
         nullptr);
     modes = views = 0;
     comboNum = 0;
@@ -36,7 +38,7 @@ void Lpf2Port::taskEntryPoint(void *pvParameters)
 
 void Lpf2Port::uartTask()
 {
-    int baudRate = 115200;
+    int baudRate = 2400;
     if (m_hwSerialNum >= 0)
     {
         m_hwSerial = static_cast<HardwareSerial *>(m_serial);
@@ -52,11 +54,9 @@ void Lpf2Port::uartTask()
 
     log_i("Initialization done, rx: %i, tx: %i", m_rxPin, m_txPin);
 
+    resetDevice();
+
     auto start = millis();
-
-    sendACK(true);
-
-    //requestSpeedChange(115200);
 
     while (1)
     {
@@ -64,43 +64,132 @@ void Lpf2Port::uartTask()
 
         for (const auto &msg : messages)
         {
+            if (m_status == LPF2_STATUS::STATUS_SYNCING)
+            {
+                if (msg.msg == MESSAGE_SYS)
+                {
+                    break; // system messages are one byte so they are not useful for syncing
+                }
+                LPF2_LOG_D("Synced with device.");
+                m_status = LPF2_STATUS::STATUS_SYNC_WAIT;
+                m_new_status = LPF2_STATUS::STATUS_INFO;
+            }
+
+            switch (m_status)
+            {
+            case LPF2_STATUS::STATUS_SYNC_WAIT:
+            case LPF2_STATUS::STATUS_ACK_WAIT:
+                if (msg.msg != MESSAGE_SYS)
+                {
+                    m_timeStart = millis();
+                    goto end_loop;
+                }
+                break;
+
+            default:
+                break;
+            }
+
             parser.printMessage(msg);
+
             parseMessage(msg);
 
-            auto now = millis();
-
-            if (now - start >= 100 && (m_status == LPF2_STATUS::STATUS_DATA || m_status == LPF2_STATUS::STATUS_DATA_START))
+            if (process(start, millis()) != 0)
             {
-                start = now;
-                sendACK(true);
-            }
-
-            if (m_status == LPF2_STATUS::STATUS_SPEED && now - m_timeStart > 1000)
-            {
-                changeBaud(2400);
-                m_status = LPF2_STATUS::STATUS_INFO;
-                log_d("Failed to change speed to 115200, going back to 2400.");
-                sendACK(true);
-            }
-
-            if (m_status == LPF2_STATUS::STATUS_DATA && now - m_timeStart > 1000)
-            {
-                changeBaud(2400);
-                m_status = LPF2_STATUS::STATUS_INFO;
-                log_d("Device disconnected.");
-                sendACK(true);
-            }
-
-            if (m_status == LPF2_STATUS::STATUS_DATA_RECEIVED)
-            {
-                log_d("Setting default mode: %i", getDefaultMode(m_deviceType));
-                setMode(getDefaultMode(m_deviceType));
-                m_status = LPF2_STATUS::STATUS_DATA;
+                goto end_loop;
             }
         }
+    end_loop:
 
-        vTaskDelay(pdMS_TO_TICKS(1));
+        process(start, millis());
+
+        vTaskDelay(1);
     }
+}
+
+uint8_t Lpf2Port::process(unsigned long &start, unsigned long now)
+{
+    if (now - m_timeStart > 2000)
+    {
+        LPF2_LOG_D("Device disconnected.");
+        resetDevice();
+        sendACK(true);
+        m_timeStart = now;
+    }
+
+    switch (m_status)
+    {
+    case LPF2_STATUS::STATUS_SPEED:
+        changeBaud(baud);
+        LPF2_LOG_D("Succesfully changed speed to %i baud", baud);
+        if (m_new_status == LPF2_STATUS::STATUS_SPEED)
+        {
+            m_status = LPF2_STATUS::STATUS_SYNC_WAIT;
+            m_new_status = LPF2_STATUS::STATUS_INFO;
+        }
+        else
+        {
+            m_status = LPF2_STATUS::STATUS_DATA_START;
+        }
+        break;
+
+    case LPF2_STATUS::STATUS_ERR:
+        LPF2_LOG_D("Error state, resetting device.");
+        resetDevice();
+        sendACK(true);
+        m_status = LPF2_STATUS::STATUS_SYNC_WAIT;
+        m_new_status = LPF2_STATUS::STATUS_INFO;
+        break;
+
+    case LPF2_STATUS::STATUS_DATA_START:
+    case LPF2_STATUS::STATUS_DATA:
+        if (now - start >= 100)
+        {
+            start = now;
+            LPF2_LOG_D("heartbeat");
+            sendACK(true);
+        }
+        break;
+
+    case LPF2_STATUS::STATUS_ACK_WAIT:
+        if (now - m_timeStart > 200)
+        {
+            switch (m_new_status)
+            {
+            case LPF2_STATUS::STATUS_SPEED:
+                // device does not support speed change
+                LPF2_LOG_D("Speed change not supported, continuing at %i baud", baud);
+                m_status = LPF2_STATUS::STATUS_SYNC_WAIT;
+                m_new_status = LPF2_STATUS::STATUS_INFO;
+                break;
+
+            default:
+                break;
+            }
+        }
+        break;
+
+    case LPF2_STATUS::STATUS_DATA_RECEIVED:
+        LPF2_LOG_D("Succesfully changed speed to %i baud", baud);
+        LPF2_LOG_D("Setting default mode: %i", getDefaultMode(m_deviceType));
+        setMode(getDefaultMode(m_deviceType));
+        sendACK(true);
+        m_status = LPF2_STATUS::STATUS_DATA;
+        break;
+
+    case LPF2_STATUS::STATUS_ACK_SENDING:
+        sendACK(false);
+        LPF2_LOG_D("Sent ACK after info, changing speed.");
+        m_status = LPF2_STATUS::STATUS_DATA_START;
+        changeBaud(baud);
+        sendACK(true);
+        start = now;
+        break;
+
+    default:
+        break;
+    }
+    return 0;
 }
 
 uint8_t Lpf2Port::getDataSize(uint8_t format)
@@ -109,7 +198,7 @@ uint8_t Lpf2Port::getDataSize(uint8_t format)
     {
     case DATA8:
         return 1;
-    
+
     case DATA16:
         return 2;
 
@@ -124,19 +213,21 @@ uint8_t Lpf2Port::getDataSize(uint8_t format)
     return 0;
 }
 
-bool Lpf2Port::deviceIsAbsMotor(DeviceType id) {
-    switch (id) {
-        case DeviceType::TECHNIC_LARGE_LINEAR_MOTOR:
-        case DeviceType::TECHNIC_XLARGE_LINEAR_MOTOR:
-        case DeviceType::TECHNIC_LARGE_ANGULAR_MOTOR:
-        case DeviceType::TECHNIC_LARGE_ANGULAR_MOTOR_GREY:
-        case DeviceType::TECHNIC_MEDIUM_ANGULAR_MOTOR:
-        case DeviceType::TECHNIC_MEDIUM_ANGULAR_MOTOR_GREY:
-        case DeviceType::MEDIUM_LINEAR_MOTOR:
-        case DeviceType::SIMPLE_MEDIUM_LINEAR_MOTOR:
-            return true;
-        default:
-            return false;
+bool Lpf2Port::deviceIsAbsMotor(DeviceType id)
+{
+    switch (id)
+    {
+    case DeviceType::TECHNIC_LARGE_LINEAR_MOTOR:
+    case DeviceType::TECHNIC_XLARGE_LINEAR_MOTOR:
+    case DeviceType::TECHNIC_LARGE_ANGULAR_MOTOR:
+    case DeviceType::TECHNIC_LARGE_ANGULAR_MOTOR_GREY:
+    case DeviceType::TECHNIC_MEDIUM_ANGULAR_MOTOR:
+    case DeviceType::TECHNIC_MEDIUM_ANGULAR_MOTOR_GREY:
+    case DeviceType::MEDIUM_LINEAR_MOTOR:
+    case DeviceType::SIMPLE_MEDIUM_LINEAR_MOTOR:
+        return true;
+    default:
+        return false;
     }
 }
 
@@ -148,6 +239,7 @@ void Lpf2Port::setMode(uint8_t num)
     m_serial->write(header);
     m_serial->write((uint8_t)num);
     m_serial->write(checksum);
+    m_serial->flush();
 }
 
 void Lpf2Port::requestSpeedChange(uint32_t speed)
@@ -169,40 +261,59 @@ void Lpf2Port::requestSpeedChange(uint32_t speed)
     checksum ^= b;
     m_serial->write(b);
     m_serial->write(checksum);
-    m_status = LPF2_STATUS::STATUS_SPEED;
+    m_serial->flush();
+    m_status = LPF2_STATUS::STATUS_ACK_WAIT;
+    m_new_status = LPF2_STATUS::STATUS_SPEED;
     m_timeStart = millis();
 }
 
-ModeNum Lpf2Port::getDefaultMode(DeviceType id) {
+void Lpf2Port::resetDevice()
+{
+    baud = 2400;
+    changeBaud(baud);
+    m_deviceType = DeviceType::UNKNOWNDEVICE;
+    modes = views = 0;
+    comboNum = 0;
+    modeData.clear();
+    for (size_t i = 0; i < 16; i++)
+    {
+        modeCombos[i] = 0;
+    }
+    nextModeExt = false;
+    m_status = LPF2_STATUS::STATUS_SYNCING;
+    m_new_status = LPF2_STATUS::STATUS_SYNC_WAIT;
+}
 
-    if (deviceIsAbsMotor(id)) {
+ModeNum Lpf2Port::getDefaultMode(DeviceType id)
+{
+
+    if (deviceIsAbsMotor(id))
+    {
         return ModeNum::MOTOR__CALIB;
     }
 
-    switch (id) {
-        case DeviceType::COLOR_DISTANCE_SENSOR:
-            return ModeNum::COLOR_DISTANCE_SENSOR__RGB_I;
-        default:
-            return ModeNum::_DEFAULT;
+    switch (id)
+    {
+    case DeviceType::COLOR_DISTANCE_SENSOR:
+        return ModeNum::COLOR_DISTANCE_SENSOR__RGB_I;
+    default:
+        return ModeNum::_DEFAULT;
     }
 }
 
 void Lpf2Port::parseMessage(const Lpf2Message &msg)
 {
-    m_timeStart = millis();
-    if (m_status == LPF2_STATUS::STATUS_DATA_START)
-    {
-        m_status = LPF2_STATUS::STATUS_DATA_RECEIVED;
-    }
     switch (msg.msg)
     {
     case MESSAGE_CMD:
     {
+        m_timeStart = millis();
         parseMessageCMD(msg);
         break;
     }
     case MESSAGE_INFO:
     {
+        m_timeStart = millis();
         parseMessageInfo(msg);
         break;
     }
@@ -211,36 +322,26 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
         switch (msg.header)
         {
         case BYTE_ACK:
-            if (m_status == LPF2_STATUS::STATUS_INFO)
+            if (m_status == LPF2_STATUS::STATUS_ACK_WAIT)
             {
-                log_d("ACK received, waiting for sync.");
-                m_status = LPF2_STATUS::STATUS_ACK;
-                sendACK();
+                LPF2_LOG_D("ACK received.");
+                m_status = m_new_status;
             }
-            else if (m_status == LPF2_STATUS::STATUS_SPEED)
+            else if (m_status == LPF2_STATUS::STATUS_INFO)
             {
-                m_status = LPF2_STATUS::STATUS_INFO;
-                changeBaud(115200);
-                log_d("Succesfully changed speed to 115200 baud");
-            }
-            else if (m_status == LPF2_STATUS::STATUS_ERR)
-            {
-                sendACK(true);
+                LPF2_LOG_D("Info end ACK received.");
+                m_status = LPF2_STATUS::STATUS_ACK_SENDING;
+                m_new_status = LPF2_STATUS::STATUS_DATA_START;
             }
             break;
         case BYTE_SYNC:
-            if (m_status == LPF2_STATUS::STATUS_ACK)
+            if (m_status == LPF2_STATUS::STATUS_SYNC_WAIT)
             {
-                log_d("SYNC received.");
-                m_status = LPF2_STATUS::STATUS_DATA_START;
-                sendACK();
-                log_d("Changing speed to %i baud", baud);
-                changeBaud(baud);
-                vTaskDelay(1);
-                sendACK(true); //keep-alive
+                LPF2_LOG_D("SYNC received.");
+                m_status = m_new_status;
             }
             break;
-        
+
         default:
             break;
         }
@@ -248,8 +349,13 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
     }
     case MESSAGE_DATA:
     {
+        if (m_status == LPF2_STATUS::STATUS_DATA_START)
+        {
+            m_status = LPF2_STATUS::STATUS_DATA_RECEIVED;
+        }
+        m_timeStart = millis();
         uint8_t mode = GET_MODE(msg.header);
-        
+
         if (nextModeExt)
         {
             mode += 8;
@@ -260,7 +366,7 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
         {
             break;
         }
-        
+
         uint8_t size = modeData[mode].data_sets * getDataSize(modeData[mode].format);
 
         if (size != modeData[mode].rawData.size())
@@ -273,7 +379,7 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
         {
             readLen = msg.length;
         }
-        
+
         for (int i = 0; i < readLen; i++)
         {
             modeData[mode].rawData[i] = msg.data[i];
@@ -455,7 +561,7 @@ void Lpf2Port::parseMessageInfo(const Lpf2Message &msg)
         }
         for (int i = 0; i < num; i++)
         {
-            std::memcpy(&modeCombos[num], msg.data.data() + 1 + (i * 2), 2);
+            std::memcpy(&modeCombos[i], msg.data.data() + 1 + (i * 2), 2);
             if (comboNum == 0 && modeCombos[num] == 0)
             {
                 comboNum = i;
@@ -485,6 +591,7 @@ void Lpf2Port::parseMessageInfo(const Lpf2Message &msg)
 
 void Lpf2Port::changeBaud(uint32_t baud)
 {
+    m_serial->flush();
     if (m_hwSerialNum >= 0)
     {
         m_hwSerial = static_cast<HardwareSerial *>(m_serial);
@@ -500,4 +607,113 @@ void Lpf2Port::changeBaud(uint32_t baud)
 void Lpf2Port::sendACK(bool NACK)
 {
     m_serial->write(NACK ? BYTE_NACK : BYTE_ACK);
+    m_serial->flush();
+}
+
+std::string Lpf2Port::formatValue(float value, const Mode &modeData) {
+    std::ostringstream os;
+
+    // Use fixed precision from modeData.decimals
+    os << std::fixed << std::setprecision(modeData.decimals);
+
+    // Adjust if negativePCT is used (example semantics)
+    if (modeData.negativePCT && value < 0.0f) {
+        os << "-";
+        value = -value;
+    }
+
+    os << value;
+
+    // Append unit if present
+    if (!modeData.unit.empty()) {
+        os << " " << modeData.unit;
+    }
+
+    return os.str();
+}
+
+std::string Lpf2Port::convertValue(Mode modeData) {
+    const std::vector<uint8_t> &raw = modeData.rawData;
+    std::string result;
+
+    // Determine byte size per dataset based on format
+    size_t bytesPerDataset;
+    switch (modeData.format) {
+        case DATA8:
+            bytesPerDataset = 1;
+            break;
+        case DATA16:
+            bytesPerDataset = 2;
+            break;
+        case DATA32:
+        case DATAF:
+            bytesPerDataset = 4;
+            break;
+        default:
+            return "<unsupported format>";
+    }
+
+    // Check that rawData contains enough bytes
+    size_t expectedSize = static_cast<size_t>(modeData.data_sets) * bytesPerDataset;
+    if (raw.size() < expectedSize) {
+        return "<invalid data length>";
+    }
+
+    const uint8_t *ptr = raw.data();
+    for (uint8_t i = 0; i < modeData.data_sets; ++i) {
+        float value = 0.0f;
+
+        // Parse based on format
+        switch (modeData.format) {
+            case DATA8:
+                value = parseData8(ptr) / pow10(modeData.decimals);
+                break;
+            case DATA16:
+                value = parseData16(ptr) / pow10(modeData.decimals);
+                break;
+            case DATA32:
+                value = parseData32(ptr) / pow10(modeData.decimals);
+                break;
+            case DATAF:
+                value = parseDataF(ptr);
+                break;
+        }
+
+        // Format to string
+        std::string part = formatValue(value, modeData);
+
+        // Append with separator
+        if (!result.empty()) {
+            result += "; ";
+        }
+        result += part;
+
+        // Advance pointer
+        ptr += bytesPerDataset;
+    }
+
+    return result;
+}
+
+float Lpf2Port::parseData8(const uint8_t *ptr) {
+    int8_t val = static_cast<int8_t>(*ptr);
+    return static_cast<float>(val);
+}
+
+float Lpf2Port::parseData16(const uint8_t *ptr) {
+    int16_t val;
+    std::memcpy(&val, ptr, sizeof(int16_t));
+    return static_cast<float>(val);
+}
+
+float Lpf2Port::parseData32(const uint8_t *ptr) {
+    int32_t val;
+    std::memcpy(&val, ptr, sizeof(int32_t));
+    return static_cast<float>(val);
+}
+
+float Lpf2Port::parseDataF(const uint8_t *ptr) {
+    float val;
+    std::memcpy(&val, ptr, sizeof(float));
+    return val;
 }
