@@ -8,7 +8,9 @@
 #include <HardwareSerial.h>
 #include <SoftwareSerial.h>
 
-#define LPF2_LOG_LEVEL 0
+#ifndef LPF2_LOG_LEVEL
+#define LPF2_LOG_LEVEL 2
+#endif
 
 #if LPF2_LOG_LEVEL > 0
 #define LPF2_LOG_E log_e

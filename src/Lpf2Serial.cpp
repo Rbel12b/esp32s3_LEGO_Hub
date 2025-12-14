@@ -92,36 +92,34 @@ void Lpf2Parser::computeChecksum(uint8_t b)
 
 void Lpf2Parser::printMessage(const Lpf2Message &msg)
 {
-    LPF2_DEBUG_EXPR_D(
-        std::string str;
-        if (msg.system)
+    std::string str;
+    if (msg.system)
+    {
+        str += "Sys: ";
+        switch (msg.header)
         {
-            str += "Sys: ";
-            switch (msg.header)
-            {
-            case BYTE_ACK:
-                str += "ACK";
-                break;
-            case BYTE_NACK:
-            str += "NACK";
-                break;
-            case BYTE_SYNC:
-                str += "SYNC";
-                break;
-            default:
-                str += std::format("Unknown (0x{:02X})", msg.header);
-                break;
-            }
-            return;
+        case BYTE_ACK:
+            str += "ACK";
+            break;
+        case BYTE_NACK:
+        str += "NACK";
+            break;
+        case BYTE_SYNC:
+            str += "SYNC";
+            break;
+        default:
+            str += std::format("Unknown (0x{:02X})", msg.header);
+            break;
         }
+        return;
+    }
 
-        str += std::format("Header: 0x{:02X}, Length: {}, MsgType: 0x{:02X}, Cmd: 0x{:02X}, Data: ", msg.header, msg.length, msg.msg, msg.cmd);
+    str += std::format("Header: 0x{:02X}, Length: {}, MsgType: 0x{:02X}, Cmd: 0x{:02X}, Data: ", msg.header, msg.length, msg.msg, msg.cmd);
 
-        for (uint8_t b : msg.data)
-        {
-            str += std::format("0x{:02X} ", b);
-        }
-        str += std::format(", C: 0x{:02X}", msg.checksum);
-        LPF2_LOG_D("%s", str.c_str());
-    );
+    for (uint8_t b : msg.data)
+    {
+        str += std::format("0x{:02X} ", b);
+    }
+    str += std::format(", C: 0x{:02X}", msg.checksum);
+    LPF2_LOG_I("%s", str.c_str());
 }

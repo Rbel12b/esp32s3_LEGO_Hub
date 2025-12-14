@@ -51,4 +51,13 @@
 #define   DATA32                        0x02    // 32-bit little-endian signed integer
 #define   DATAF                         0x03    // 32-bit little-endian IEEE 754 floating point
 
+#define   LENGTH_1                      (0x00 << 3)
+#define   LENGTH_2                      (0x01 << 3)
+#define   LENGTH_4                      (0x02 << 3)
+#define   LENGTH_8                      (0x03 << 3)
+#define   LENGTH_16                     (0x04 << 3)
+#define   LENGTH_32                     (0x05 << 3)
+#define   LENGTH_64                     (0x06 << 3)
+#define   LENGTH_128                    (0x07 << 3)
+
 #endif

@@ -19,6 +19,7 @@ void Lpf2Port::init()
     std::string taskName = "uartTask";
     taskName += m_rxPin;
     taskName += m_txPin;
+    m_serialMutex = xSemaphoreCreateMutex();
     xTaskCreate(
         &Lpf2Port::taskEntryPoint, // Static entry point
         taskName.c_str(),          // Task name
@@ -28,6 +29,15 @@ void Lpf2Port::init()
         nullptr);
     modes = views = 0;
     comboNum = 0;
+}
+
+bool Lpf2Port::deviceConnected()
+{
+    if (m_deviceType == DeviceType::UNKNOWNDEVICE)
+        return false;
+    if (m_status != LPF2_STATUS::STATUS_DATA)
+        return false;
+    return true;
 }
 
 void Lpf2Port::taskEntryPoint(void *pvParameters)
@@ -90,7 +100,9 @@ void Lpf2Port::uartTask()
                 break;
             }
 
-            parser.printMessage(msg);
+            LPF2_DEBUG_EXPR_D(
+                parser.printMessage(msg);
+            );
 
             parseMessage(msg);
 
@@ -236,10 +248,13 @@ void Lpf2Port::setMode(uint8_t num)
     uint8_t header = MESSAGE_CMD | CMD_SELECT;
     uint8_t checksum = header ^ 0xFF;
     checksum ^= (uint8_t)num;
+
+    xSemaphoreTake(m_serialMutex, portMAX_DELAY);
     m_serial->write(header);
     m_serial->write((uint8_t)num);
     m_serial->write(checksum);
     m_serial->flush();
+    xSemaphoreGive(m_serialMutex);
 }
 
 void Lpf2Port::requestSpeedChange(uint32_t speed)
@@ -247,21 +262,25 @@ void Lpf2Port::requestSpeedChange(uint32_t speed)
     uint8_t header = MESSAGE_CMD | CMD_SPEED | (2 << 3);
     uint8_t checksum = header ^ 0xFF;
     uint8_t b;
-    m_serial->write(header);
-    b = (speed & 0xFF) >> 0;
-    checksum ^= b;
-    m_serial->write(b);
-    b = (speed & 0xFF00) >> 8;
-    checksum ^= b;
-    m_serial->write(b);
-    b = (speed & 0xFF0000) >> 16;
-    checksum ^= b;
-    m_serial->write(b);
-    b = (speed & 0xFF000000) >> 24;
-    checksum ^= b;
-    m_serial->write(b);
-    m_serial->write(checksum);
-    m_serial->flush();
+    xSemaphoreTake(m_serialMutex, portMAX_DELAY);
+    {
+        m_serial->write(header);
+        b = (speed & 0xFF) >> 0;
+        checksum ^= b;
+        m_serial->write(b);
+        b = (speed & 0xFF00) >> 8;
+        checksum ^= b;
+        m_serial->write(b);
+        b = (speed & 0xFF0000) >> 16;
+        checksum ^= b;
+        m_serial->write(b);
+        b = (speed & 0xFF000000) >> 24;
+        checksum ^= b;
+        m_serial->write(b);
+        m_serial->write(checksum);
+        m_serial->flush();
+    }
+    xSemaphoreGive(m_serialMutex);
     m_status = LPF2_STATUS::STATUS_ACK_WAIT;
     m_new_status = LPF2_STATUS::STATUS_SPEED;
     m_timeStart = millis();
@@ -606,18 +625,22 @@ void Lpf2Port::changeBaud(uint32_t baud)
 
 void Lpf2Port::sendACK(bool NACK)
 {
+    xSemaphoreTake(m_serialMutex, portMAX_DELAY);
     m_serial->write(NACK ? BYTE_NACK : BYTE_ACK);
     m_serial->flush();
+    xSemaphoreGive(m_serialMutex);
 }
 
-std::string Lpf2Port::formatValue(float value, const Mode &modeData) {
+std::string Lpf2Port::formatValue(float value, const Mode &modeData)
+{
     std::ostringstream os;
 
     // Use fixed precision from modeData.decimals
     os << std::fixed << std::setprecision(modeData.decimals);
 
     // Adjust if negativePCT is used (example semantics)
-    if (modeData.negativePCT && value < 0.0f) {
+    if (modeData.negativePCT && value < 0.0f)
+    {
         os << "-";
         value = -value;
     }
@@ -625,65 +648,72 @@ std::string Lpf2Port::formatValue(float value, const Mode &modeData) {
     os << value;
 
     // Append unit if present
-    if (!modeData.unit.empty()) {
+    if (!modeData.unit.empty())
+    {
         os << " " << modeData.unit;
     }
 
     return os.str();
 }
 
-std::string Lpf2Port::convertValue(Mode modeData) {
+std::string Lpf2Port::convertValue(Mode modeData) const
+{
     const std::vector<uint8_t> &raw = modeData.rawData;
     std::string result;
 
     // Determine byte size per dataset based on format
     size_t bytesPerDataset;
-    switch (modeData.format) {
-        case DATA8:
-            bytesPerDataset = 1;
-            break;
-        case DATA16:
-            bytesPerDataset = 2;
-            break;
-        case DATA32:
-        case DATAF:
-            bytesPerDataset = 4;
-            break;
-        default:
-            return "<unsupported format>";
+    switch (modeData.format)
+    {
+    case DATA8:
+        bytesPerDataset = 1;
+        break;
+    case DATA16:
+        bytesPerDataset = 2;
+        break;
+    case DATA32:
+    case DATAF:
+        bytesPerDataset = 4;
+        break;
+    default:
+        return "<unsupported format>";
     }
 
     // Check that rawData contains enough bytes
     size_t expectedSize = static_cast<size_t>(modeData.data_sets) * bytesPerDataset;
-    if (raw.size() < expectedSize) {
+    if (raw.size() < expectedSize)
+    {
         return "<invalid data length>";
     }
 
     const uint8_t *ptr = raw.data();
-    for (uint8_t i = 0; i < modeData.data_sets; ++i) {
+    for (uint8_t i = 0; i < modeData.data_sets; ++i)
+    {
         float value = 0.0f;
 
         // Parse based on format
-        switch (modeData.format) {
-            case DATA8:
-                value = parseData8(ptr) / pow10(modeData.decimals);
-                break;
-            case DATA16:
-                value = parseData16(ptr) / pow10(modeData.decimals);
-                break;
-            case DATA32:
-                value = parseData32(ptr) / pow10(modeData.decimals);
-                break;
-            case DATAF:
-                value = parseDataF(ptr);
-                break;
+        switch (modeData.format)
+        {
+        case DATA8:
+            value = parseData8(ptr) / pow10(modeData.decimals);
+            break;
+        case DATA16:
+            value = parseData16(ptr) / pow10(modeData.decimals);
+            break;
+        case DATA32:
+            value = parseData32(ptr) / pow10(modeData.decimals);
+            break;
+        case DATAF:
+            value = parseDataF(ptr);
+            break;
         }
 
         // Format to string
         std::string part = formatValue(value, modeData);
 
         // Append with separator
-        if (!result.empty()) {
+        if (!result.empty())
+        {
             result += "; ";
         }
         result += part;
@@ -695,24 +725,91 @@ std::string Lpf2Port::convertValue(Mode modeData) {
     return result;
 }
 
-float Lpf2Port::parseData8(const uint8_t *ptr) {
+#define CHECK_LENGHT(size, msg_size, length) \
+    else if (size <= length)                 \
+    {                                        \
+        msg_size = LENGTH_##length;          \
+    }
+
+int Lpf2Port::writeData(uint8_t modeNum, std::vector<uint8_t> data)
+{
+    if (modeNum >= modeData.size())
+    {
+        return 1;
+    }
+
+    size_t size = data.size();
+    uint8_t msg_size = 0;
+
+    if (size == 0)
+    {
+        return 0;
+    }
+    CHECK_LENGHT(size, msg_size, 1)
+    CHECK_LENGHT(size, msg_size, 2)
+    CHECK_LENGHT(size, msg_size, 4)
+    CHECK_LENGHT(size, msg_size, 8)
+    CHECK_LENGHT(size, msg_size, 16)
+    CHECK_LENGHT(size, msg_size, 32)
+    CHECK_LENGHT(size, msg_size, 64)
+    CHECK_LENGHT(size, msg_size, 128)
+    else if (size > 128)
+    {
+        return 1;
+    }
+
+    uint8_t header = MESSAGE_CMD | CMD_EXT_MODE | LENGTH_1;
+    uint8_t checksum = header ^ 0xFF;
+    uint8_t b = (modeNum >= 8) ? 8 : 0;
+
+    xSemaphoreTake(m_serialMutex, portMAX_DELAY);
+    {
+        m_serial->write(header);
+        checksum ^= b;
+        m_serial->write(b);
+        m_serial->write(checksum);
+
+        header = MESSAGE_DATA | msg_size | (modeNum & 0x07);
+        checksum = header ^ 0xFF;
+        m_serial->write(header);
+
+        for (uint8_t i = 0; i < size; i++)
+        {
+            b = data[i];
+            checksum ^= b;
+            m_serial->write(b);
+        }
+
+        m_serial->write(checksum);
+        m_serial->flush();
+    }
+    xSemaphoreGive(m_serialMutex);
+
+    return 0;
+}
+
+float Lpf2Port::parseData8(const uint8_t *ptr)
+{
     int8_t val = static_cast<int8_t>(*ptr);
     return static_cast<float>(val);
 }
 
-float Lpf2Port::parseData16(const uint8_t *ptr) {
+float Lpf2Port::parseData16(const uint8_t *ptr)
+{
     int16_t val;
     std::memcpy(&val, ptr, sizeof(int16_t));
     return static_cast<float>(val);
 }
 
-float Lpf2Port::parseData32(const uint8_t *ptr) {
+float Lpf2Port::parseData32(const uint8_t *ptr)
+{
     int32_t val;
     std::memcpy(&val, ptr, sizeof(int32_t));
     return static_cast<float>(val);
 }
 
-float Lpf2Port::parseDataF(const uint8_t *ptr) {
+float Lpf2Port::parseDataF(const uint8_t *ptr)
+{
     float val;
     std::memcpy(&val, ptr, sizeof(float));
     return val;

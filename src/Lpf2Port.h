@@ -84,8 +84,8 @@ public:
     };
 
     static std::string formatValue(float value, const Mode &modeData);
-    std::string convertValue(Mode modeData);
-    std::string convertValue(size_t modeNum)
+    std::string convertValue(Mode modeData) const;
+    std::string convertValue(uint8_t modeNum) const
     {
         if (modeNum >= modeData.size())
         {
@@ -94,10 +94,27 @@ public:
         return convertValue(modeData[modeNum]);
     }
 
+    int writeData(uint8_t modeNum, std::vector<uint8_t> data);
+
+    DeviceType getDeviceType() const { return m_deviceType; }
+    size_t getSpeed() const { return baud; }
+    uint8_t getModeCount() const { return modes; }
+    uint8_t getViewCount() const { return views; }
+    const std::vector<Mode>& getModes() const { return modeData; }
+    uint8_t getModeComboCount() const { return comboNum; }
+
+    uint16_t getModeCombo(uint8_t combo) const
+    {
+        if (combo >= comboNum || combo >= 16)
+            return 0;
+        return modeCombos[combo];
+    }
+
+    bool deviceConnected();
+
     std::vector<Mode> modeData;
 
 private:
-
     LPF2_STATUS m_status = LPF2_STATUS::STATUS_ERR;
     LPF2_STATUS m_new_status = LPF2_STATUS::STATUS_ERR;
     DeviceType m_deviceType = DeviceType::UNKNOWNDEVICE;
@@ -128,7 +145,6 @@ private:
 
     uint8_t process(unsigned long &start, unsigned long now);
 
-
     /// Parse a signed 8-bit integer from raw bytes
     static float parseData8(const uint8_t *ptr);
 
@@ -147,6 +163,7 @@ private:
     Stream *m_serial;
     HardwareSerial *m_hwSerial;
     SoftwareSerial *m_swSerial;
+    xQueueHandle m_serialMutex;
 
     /**
      * Time of the last data received (millis since startup).
