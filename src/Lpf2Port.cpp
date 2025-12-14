@@ -146,7 +146,7 @@ uint8_t Lpf2Port::process(unsigned long &start, unsigned long now)
         break;
 
     case LPF2_STATUS::STATUS_ERR:
-        LPF2_LOG_D("Error state, resetting device.");
+        LPF2_LOG_W("Error state, resetting device.");
         resetDevice();
         sendACK(true);
         m_status = LPF2_STATUS::STATUS_SYNC_WAIT;
@@ -158,7 +158,7 @@ uint8_t Lpf2Port::process(unsigned long &start, unsigned long now)
         if (now - start >= 100)
         {
             start = now;
-            LPF2_LOG_D("heartbeat");
+            LPF2_LOG_V("heartbeat");
             sendACK(true);
         }
         break;
@@ -170,7 +170,7 @@ uint8_t Lpf2Port::process(unsigned long &start, unsigned long now)
             {
             case LPF2_STATUS::STATUS_SPEED:
                 // device does not support speed change
-                LPF2_LOG_D("Speed change not supported, continuing at %i baud", baud);
+                LPF2_LOG_W("Speed change not supported, continuing at %i baud", baud);
                 m_status = LPF2_STATUS::STATUS_SYNC_WAIT;
                 m_new_status = LPF2_STATUS::STATUS_INFO;
                 break;
