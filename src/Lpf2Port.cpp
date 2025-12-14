@@ -631,6 +631,68 @@ void Lpf2Port::sendACK(bool NACK)
     xSemaphoreGive(m_serialMutex);
 }
 
+float Lpf2Port::getValue(const Mode &modeData, uint8_t dataSet)
+{
+    if (dataSet > modeData.data_sets)
+        return 0.0f;
+
+    const std::vector<uint8_t> &raw = modeData.rawData;
+    std::string result;
+
+    // Determine byte size per dataset based on format
+    size_t bytesPerDataset;
+    switch (modeData.format)
+    {
+    case DATA8:
+        bytesPerDataset = 1;
+        break;
+    case DATA16:
+        bytesPerDataset = 2;
+        break;
+    case DATA32:
+    case DATAF:
+        bytesPerDataset = 4;
+        break;
+    default:
+        return 0.0f;
+    }
+
+    // Check that rawData contains enough bytes
+    size_t expectedSize = static_cast<size_t>(modeData.data_sets) * bytesPerDataset;
+    if (raw.size() < expectedSize)
+    {
+        return 0.0f;
+    }
+
+    const uint8_t *ptr = raw.data() + (bytesPerDataset * dataSet);
+    float value = 0.0f;
+
+    // Parse based on format
+    switch (modeData.format)
+    {
+    case DATA8:
+        value = parseData8(ptr) / pow10(modeData.decimals);
+        break;
+    case DATA16:
+        value = parseData16(ptr) / pow10(modeData.decimals);
+        break;
+    case DATA32:
+        value = parseData32(ptr) / pow10(modeData.decimals);
+        break;
+    case DATAF:
+        value = parseDataF(ptr);
+        break;
+    }
+    return value;
+}
+
+float Lpf2Port::getValue(uint8_t modeNum, uint8_t dataSet) const
+{
+    if (modeNum > modeData.size())
+        return 0.0f;
+    return getValue(modeData[modeNum], dataSet);
+}
+
 std::string Lpf2Port::formatValue(float value, const Mode &modeData)
 {
     std::ostringstream os;
@@ -638,11 +700,9 @@ std::string Lpf2Port::formatValue(float value, const Mode &modeData)
     // Use fixed precision from modeData.decimals
     os << std::fixed << std::setprecision(modeData.decimals);
 
-    // Adjust if negativePCT is used (example semantics)
-    if (modeData.negativePCT && value < 0.0f)
+    if (modeData.negativePCT)
     {
-        os << "-";
-        value = -value;
+        value = value - 100;
     }
 
     os << value;
@@ -656,9 +716,9 @@ std::string Lpf2Port::formatValue(float value, const Mode &modeData)
     return os.str();
 }
 
-std::string Lpf2Port::convertValue(Mode modeData) const
+std::string Lpf2Port::convertValue(Mode modeData)
 {
-    const std::vector<uint8_t> &raw = modeData.rawData;
+    auto &raw = modeData.rawData;
     std::string result;
 
     // Determine byte size per dataset based on format
@@ -686,30 +746,10 @@ std::string Lpf2Port::convertValue(Mode modeData) const
         return "<invalid data length>";
     }
 
-    const uint8_t *ptr = raw.data();
     for (uint8_t i = 0; i < modeData.data_sets; ++i)
     {
-        float value = 0.0f;
-
-        // Parse based on format
-        switch (modeData.format)
-        {
-        case DATA8:
-            value = parseData8(ptr) / pow10(modeData.decimals);
-            break;
-        case DATA16:
-            value = parseData16(ptr) / pow10(modeData.decimals);
-            break;
-        case DATA32:
-            value = parseData32(ptr) / pow10(modeData.decimals);
-            break;
-        case DATAF:
-            value = parseDataF(ptr);
-            break;
-        }
-
         // Format to string
-        std::string part = formatValue(value, modeData);
+        std::string part = formatValue(getValue(modeData, i), modeData);
 
         // Append with separator
         if (!result.empty())
@@ -717,9 +757,6 @@ std::string Lpf2Port::convertValue(Mode modeData) const
             result += "; ";
         }
         result += part;
-
-        // Advance pointer
-        ptr += bytesPerDataset;
     }
 
     return result;

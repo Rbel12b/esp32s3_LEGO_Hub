@@ -83,8 +83,10 @@ public:
         Flags flags;
     };
 
+    static float getValue(const Mode &modeData, uint8_t dataSet);
+    float getValue(uint8_t modeNum, uint8_t dataSet) const;
     static std::string formatValue(float value, const Mode &modeData);
-    std::string convertValue(Mode modeData) const;
+    static std::string convertValue(Mode modeData);
     std::string convertValue(uint8_t modeNum) const
     {
         if (modeNum >= modeData.size())
