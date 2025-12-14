@@ -111,6 +111,7 @@ void Lpf2Parser::printMessage(const Lpf2Message &msg)
             str += std::format("Unknown (0x{:02X})", msg.header);
             break;
         }
+        LPF2_LOG_I("%s", str.c_str());
         return;
     }
 

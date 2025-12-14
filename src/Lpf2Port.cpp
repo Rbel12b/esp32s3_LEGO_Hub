@@ -81,23 +81,11 @@ void Lpf2Port::uartTask()
                     break; // system messages are one byte so they are not useful for syncing
                 }
                 LPF2_LOG_D("Synced with device.");
-                m_status = LPF2_STATUS::STATUS_SYNC_WAIT;
-                m_new_status = LPF2_STATUS::STATUS_INFO;
-            }
-
-            switch (m_status)
-            {
-            case LPF2_STATUS::STATUS_SYNC_WAIT:
-            case LPF2_STATUS::STATUS_ACK_WAIT:
-                if (msg.msg != MESSAGE_SYS)
-                {
-                    m_timeStart = millis();
-                    goto end_loop;
-                }
-                break;
-
-            default:
-                break;
+                m_status = m_new_status;
+                if (m_new_status == LPF2_STATUS::STATUS_ACK_WAIT)
+                    m_new_status = LPF2_STATUS::STATUS_SPEED_CHANGE;
+                else
+                    m_new_status = LPF2_STATUS::STATUS_INFO;
             }
 
             LPF2_DEBUG_EXPR_D(
@@ -121,7 +109,9 @@ void Lpf2Port::uartTask()
 
 uint8_t Lpf2Port::process(unsigned long &start, unsigned long now)
 {
-    if (now - m_timeStart > 2000)
+    if (now - m_timeStart > 2000 &&
+        (m_status != LPF2_STATUS::STATUS_SPEED_CHANGE) &&
+        !(m_status == LPF2_STATUS::STATUS_ACK_WAIT && m_new_status == LPF2_STATUS::STATUS_SPEED))
     {
         LPF2_LOG_D("Device disconnected.");
         resetDevice();
@@ -131,8 +121,13 @@ uint8_t Lpf2Port::process(unsigned long &start, unsigned long now)
 
     switch (m_status)
     {
+    case LPF2_STATUS::STATUS_SPEED_CHANGE:
+        baud = 115200;
+        requestSpeedChange(baud);
+        break;
     case LPF2_STATUS::STATUS_SPEED:
         changeBaud(baud);
+        sendACK(true);
         LPF2_LOG_D("Succesfully changed speed to %i baud", baud);
         if (m_new_status == LPF2_STATUS::STATUS_SPEED)
         {
@@ -164,15 +159,12 @@ uint8_t Lpf2Port::process(unsigned long &start, unsigned long now)
         break;
 
     case LPF2_STATUS::STATUS_ACK_WAIT:
-        if (now - m_timeStart > 200)
+        if (now - m_timeStart > 100)
         {
             switch (m_new_status)
             {
             case LPF2_STATUS::STATUS_SPEED:
-                // device does not support speed change
-                LPF2_LOG_W("Speed change not supported, continuing at %i baud", baud);
-                m_status = LPF2_STATUS::STATUS_SYNC_WAIT;
-                m_new_status = LPF2_STATUS::STATUS_INFO;
+                m_status = LPF2_STATUS::STATUS_SPEED_CHANGE;
                 break;
 
             default:
@@ -259,6 +251,7 @@ void Lpf2Port::setMode(uint8_t num)
 
 void Lpf2Port::requestSpeedChange(uint32_t speed)
 {
+    LPF2_LOG_D("Trying to change speed to %i", speed);
     uint8_t header = MESSAGE_CMD | CMD_SPEED | (2 << 3);
     uint8_t checksum = header ^ 0xFF;
     uint8_t b;
@@ -288,7 +281,7 @@ void Lpf2Port::requestSpeedChange(uint32_t speed)
 
 void Lpf2Port::resetDevice()
 {
-    baud = 2400;
+    baud = 115200;
     changeBaud(baud);
     m_deviceType = DeviceType::UNKNOWNDEVICE;
     modes = views = 0;
@@ -299,8 +292,8 @@ void Lpf2Port::resetDevice()
         modeCombos[i] = 0;
     }
     nextModeExt = false;
-    m_status = LPF2_STATUS::STATUS_SYNCING;
-    m_new_status = LPF2_STATUS::STATUS_SYNC_WAIT;
+    m_status = LPF2_STATUS::STATUS_SPEED_CHANGE;
+    m_new_status = LPF2_STATUS::STATUS_SPEED_CHANGE;
 }
 
 ModeNum Lpf2Port::getDefaultMode(DeviceType id)
@@ -326,6 +319,15 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
     {
     case MESSAGE_CMD:
     {
+        if (m_status == LPF2_STATUS::STATUS_ACK_WAIT && m_new_status == LPF2_STATUS::STATUS_SPEED)
+        {
+            // device does not support speed change
+            baud = 2400;
+            changeBaud(2400);
+            LPF2_LOG_W("Speed change not supported, continuing at %i baud", baud);
+            m_status = LPF2_STATUS::STATUS_SYNC_WAIT;
+            m_new_status = LPF2_STATUS::STATUS_INFO;
+        }
         m_timeStart = millis();
         parseMessageCMD(msg);
         break;

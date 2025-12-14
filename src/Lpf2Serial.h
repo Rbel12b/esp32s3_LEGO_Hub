@@ -2,6 +2,8 @@
 #ifndef _LPF2_SERIAL_H_
 #define _LPF2_SERIAL_H_
 
+#include "config.h"
+
 #include <Arduino.h>
 #include <vector>
 #include <Stream.h>
@@ -115,7 +117,7 @@ public:
     Lpf2Parser(Stream *serial) : m_serial(serial), buffer(256) {}
     
     std::vector<Lpf2Message> update();
-    void printMessage(const Lpf2Message &msg);
+    static void printMessage(const Lpf2Message &msg);
 
 private:
     void resetChecksum();

@@ -2,6 +2,8 @@
 #ifndef _LPF2_PORT_H_
 #define _LPF2_PORT_H_
 
+#include "config.h"
+
 #include <Arduino.h>
 #include <Stream.h>
 #include <HardwareSerial.h>
@@ -13,7 +15,7 @@
 class Lpf2Port
 {
 public:
-    Lpf2Port(uint8_t rxPin, uint8_t txPin, int hwSerialNum) : m_rxPin(rxPin), m_txPin(txPin), m_hwSerialNum(hwSerialNum) {};
+    Lpf2Port(uint8_t rxPin, uint8_t txPin, int hwSerialNum) : m_rxPin(rxPin), m_txPin(txPin), m_hwSerialNum(hwSerialNum), m_deviceType(DeviceType::UNKNOWNDEVICE) {};
 
     void init();
 

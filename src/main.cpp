@@ -1,12 +1,12 @@
+#include "config.h"
 #include <Arduino.h>
 #include <cstring>
-
-#define LPF2_LOG_LEVEL 0
 #include "Lpf2Port.h"
 
 Lpf2Port port0(14, 13, 1);
 
-Lpf2Parser *parser = nullptr;
+Lpf2Parser *brick = nullptr;
+Lpf2Parser *sensor = nullptr;
 
 void printModes(const Lpf2Port &port);
 
@@ -24,11 +24,34 @@ void setup()
     port0.init();
 
     data.resize(4);
+    // size_t baud = 2400;
+    // Serial1.begin(baud, SERIAL_8N1, 14, 13);
+    // Serial2.begin(baud, SERIAL_8N1, 12, 11);
+
+    // brick = new Lpf2Parser(&Serial2);
+    // sensor = new Lpf2Parser(&Serial1);
 }
 
 void loop()
 {
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    // auto brick_msgs = brick->update();
+    // auto sensor_msgs = sensor->update();
+    // for (size_t i = 0; i < std::max(brick_msgs.size(), sensor_msgs.size()); i++)
+    // {
+    //     if (i < brick_msgs.size())
+    //     {
+    //         Serial.printf("brick:  ");
+    //         brick->printMessage(brick_msgs[i]);
+    //     }
+    //     if (i < sensor_msgs.size())
+    //     {
+    //         Serial.printf("sensor: ");
+    //         sensor->printMessage(sensor_msgs[i]);
+    //     }
+    // }
+    vTaskDelay(1);
+    // return;
+
     if (!port0.deviceConnected())
         return;
 
@@ -61,8 +84,9 @@ void loop()
     }
 
     port0.writeData(LIGHT_MODE, data);
+    
     // printModes(port0);
-    log_i("Distance: %s", port0.convertValue(0).c_str());
+    // log_i("Distance: %s", port0.convertValue(0).c_str());
 }
 
 void printModes(const Lpf2Port &port)
