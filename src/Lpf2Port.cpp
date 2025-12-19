@@ -4,21 +4,13 @@
 #include <sstream>
 #include <iomanip>
 
-void Lpf2Port::init()
+void Lpf2Port::init(
+#if defined(LPF2_USE_FREERTOS)
+    std::string taskName
+#endif
+)
 {
-    if (m_hwSerialNum >= 0)
-    {
-        m_hwSerial = new HardwareSerial(m_hwSerialNum);
-        m_serial = m_hwSerial;
-    }
-    else
-    {
-        m_swSerial = new SoftwareSerial();
-        m_serial = m_swSerial;
-    }
-    std::string taskName = "uartTask";
-    taskName += m_rxPin;
-    taskName += m_txPin;
+#if defined(LPF2_USE_FREERTOS)
     m_serialMutex = xSemaphoreCreateMutex();
     xTaskCreate(
         &Lpf2Port::taskEntryPoint, // Static entry point
@@ -27,8 +19,8 @@ void Lpf2Port::init()
         this, // Pass this pointer
         5,
         nullptr);
-    modes = views = 0;
-    comboNum = 0;
+#endif
+    resetDevice();
 }
 
 bool Lpf2Port::deviceConnected()
@@ -40,6 +32,8 @@ bool Lpf2Port::deviceConnected()
     return true;
 }
 
+#if defined(LPF2_USE_FREERTOS)
+
 void Lpf2Port::taskEntryPoint(void *pvParameters)
 {
     Lpf2Port *self = static_cast<Lpf2Port *>(pvParameters);
@@ -49,65 +43,57 @@ void Lpf2Port::taskEntryPoint(void *pvParameters)
 void Lpf2Port::uartTask()
 {
     int baudRate = 2400;
-    if (m_hwSerialNum >= 0)
-    {
-        m_hwSerial = static_cast<HardwareSerial *>(m_serial);
-        m_hwSerial->begin(baudRate, SERIAL_8N1, m_rxPin, m_txPin);
-    }
-    else
-    {
-        m_swSerial = static_cast<SoftwareSerial *>(m_serial);
-        m_swSerial->begin(baudRate, EspSoftwareSerial::SWSERIAL_8N1, m_rxPin, m_txPin);
-    }
 
-    Lpf2Parser parser(m_serial);
-
-    log_i("Initialization done, rx: %i, tx: %i", m_rxPin, m_txPin);
+    log_i("Initialization done.");
 
     resetDevice();
 
-    auto start = millis();
+    Lpf2Message message;
 
     while (1)
     {
-        auto messages = parser.update();
-
-        for (const auto &msg : messages)
-        {
-            if (m_status == LPF2_STATUS::STATUS_SYNCING)
-            {
-                if (msg.msg == MESSAGE_SYS)
-                {
-                    break; // system messages are one byte so they are not useful for syncing
-                }
-                LPF2_LOG_D("Synced with device.");
-                m_status = m_new_status;
-                if (m_new_status == LPF2_STATUS::STATUS_ACK_WAIT)
-                    m_new_status = LPF2_STATUS::STATUS_SPEED_CHANGE;
-                else
-                    m_new_status = LPF2_STATUS::STATUS_INFO;
-            }
-
-            LPF2_DEBUG_EXPR_D(
-                parser.printMessage(msg);
-            );
-
-            parseMessage(msg);
-
-            if (process(start, millis()) != 0)
-            {
-                goto end_loop;
-            }
-        }
-    end_loop:
-
-        process(start, millis());
 
         vTaskDelay(1);
     }
 }
+#endif
 
-uint8_t Lpf2Port::process(unsigned long &start, unsigned long now)
+void Lpf2Port::update()
+{
+    auto messages = m_parser.update();
+
+    for (const auto &msg : messages)
+    {
+        if (m_status == LPF2_STATUS::STATUS_SYNCING)
+        {
+            if (msg.msg == MESSAGE_SYS)
+            {
+                break; // system messages are one byte so they are not useful for syncing
+            }
+            LPF2_LOG_D("Synced with device.");
+            m_status = m_new_status;
+            if (m_new_status == LPF2_STATUS::STATUS_ACK_WAIT)
+                m_new_status = LPF2_STATUS::STATUS_SPEED_CHANGE;
+            else
+                m_new_status = LPF2_STATUS::STATUS_INFO;
+        }
+
+        LPF2_DEBUG_EXPR_D(
+            parser.printMessage(msg););
+
+        parseMessage(msg);
+
+        if (process(millis()) != 0)
+        {
+            goto end_loop;
+        }
+    }
+end_loop:
+
+    process(millis());
+}
+
+uint8_t Lpf2Port::process(unsigned long now)
 {
     if (now - m_timeStart > 2000 &&
         (m_status != LPF2_STATUS::STATUS_SPEED_CHANGE) &&
@@ -150,9 +136,9 @@ uint8_t Lpf2Port::process(unsigned long &start, unsigned long now)
 
     case LPF2_STATUS::STATUS_DATA_START:
     case LPF2_STATUS::STATUS_DATA:
-        if (now - start >= 100)
+        if (now - m_start >= 100)
         {
-            start = now;
+            m_start = now;
             LPF2_LOG_V("heartbeat");
             sendACK(true);
         }
@@ -187,7 +173,7 @@ uint8_t Lpf2Port::process(unsigned long &start, unsigned long now)
         m_status = LPF2_STATUS::STATUS_DATA_START;
         changeBaud(baud);
         sendACK(true);
-        start = now;
+        m_start = now;
         break;
 
     default:
@@ -241,12 +227,16 @@ void Lpf2Port::setMode(uint8_t num)
     uint8_t checksum = header ^ 0xFF;
     checksum ^= (uint8_t)num;
 
+#if defined(LPF2_USE_FREERTOS)
     xSemaphoreTake(m_serialMutex, portMAX_DELAY);
+#endif
     m_serial->write(header);
     m_serial->write((uint8_t)num);
     m_serial->write(checksum);
     m_serial->flush();
+#if defined(LPF2_USE_FREERTOS)
     xSemaphoreGive(m_serialMutex);
+#endif
 }
 
 void Lpf2Port::requestSpeedChange(uint32_t speed)
@@ -255,7 +245,9 @@ void Lpf2Port::requestSpeedChange(uint32_t speed)
     uint8_t header = MESSAGE_CMD | CMD_SPEED | (2 << 3);
     uint8_t checksum = header ^ 0xFF;
     uint8_t b;
+#if defined(LPF2_USE_FREERTOS)
     xSemaphoreTake(m_serialMutex, portMAX_DELAY);
+#endif
     {
         m_serial->write(header);
         b = (speed & 0xFF) >> 0;
@@ -273,7 +265,9 @@ void Lpf2Port::requestSpeedChange(uint32_t speed)
         m_serial->write(checksum);
         m_serial->flush();
     }
+#if defined(LPF2_USE_FREERTOS)
     xSemaphoreGive(m_serialMutex);
+#endif
     m_status = LPF2_STATUS::STATUS_ACK_WAIT;
     m_new_status = LPF2_STATUS::STATUS_SPEED;
     m_timeStart = millis();
@@ -286,7 +280,10 @@ void Lpf2Port::resetDevice()
     m_deviceType = DeviceType::UNKNOWNDEVICE;
     modes = views = 0;
     comboNum = 0;
-    modeData.clear();
+    for (int i = 0; i < modes; i++)
+    {
+        modeData[i] = Mode();
+    }
     for (size_t i = 0; i < 16; i++)
     {
         modeCombos[i] = 0;
@@ -294,6 +291,7 @@ void Lpf2Port::resetDevice()
     nextModeExt = false;
     m_status = LPF2_STATUS::STATUS_SPEED_CHANGE;
     m_new_status = LPF2_STATUS::STATUS_SPEED_CHANGE;
+    m_start = millis();
 }
 
 ModeNum Lpf2Port::getDefaultMode(DeviceType id)
@@ -390,11 +388,6 @@ void Lpf2Port::parseMessage(const Lpf2Message &msg)
 
         uint8_t size = modeData[mode].data_sets * getDataSize(modeData[mode].format);
 
-        if (size != modeData[mode].rawData.size())
-        {
-            modeData[mode].rawData.resize(size, 0); // Initialize resized elements to 0
-        }
-
         uint8_t readLen = size;
         if (msg.length < size)
         {
@@ -441,7 +434,6 @@ void Lpf2Port::parseMessageCMD(const Lpf2Message &msg)
             modes = msg.data[2] + 1;
             views = msg.data[3] + 1;
         }
-        modeData.resize(modes);
         break;
     }
     case CMD_SPEED:
@@ -450,7 +442,7 @@ void Lpf2Port::parseMessageCMD(const Lpf2Message &msg)
         {
             break;
         }
-        baud = msg.data[0] | (msg.data[1] << 8) | (msg.data[2] << 16) | (msg.data[3] << 24);
+        baud = msg.data[0] | ((uint64_t)msg.data[1] << 8) | ((uint64_t)msg.data[2] << 16) | ((uint64_t)msg.data[3] << 24);
         break;
     }
     case CMD_VERSION:
@@ -459,7 +451,7 @@ void Lpf2Port::parseMessageCMD(const Lpf2Message &msg)
     }
     case CMD_EXT_MODE:
     {
-        if (!msg.data.empty() && msg.data[0])
+        if (msg.data[0])
         {
             nextModeExt = true;
         }
@@ -613,24 +605,19 @@ void Lpf2Port::parseMessageInfo(const Lpf2Message &msg)
 void Lpf2Port::changeBaud(uint32_t baud)
 {
     m_serial->flush();
-    if (m_hwSerialNum >= 0)
-    {
-        m_hwSerial = static_cast<HardwareSerial *>(m_serial);
-        m_hwSerial->updateBaudRate(baud);
-    }
-    else
-    {
-        m_swSerial = static_cast<SoftwareSerial *>(m_serial);
-        m_swSerial->begin(baud, EspSoftwareSerial::SWSERIAL_8N1, m_rxPin, m_txPin);
-    }
+    m_serial->setBaudrate(baud);
 }
 
 void Lpf2Port::sendACK(bool NACK)
 {
+#if defined(LPF2_USE_FREERTOS)
     xSemaphoreTake(m_serialMutex, portMAX_DELAY);
+#endif
     m_serial->write(NACK ? BYTE_NACK : BYTE_ACK);
     m_serial->flush();
+#if defined(LPF2_USE_FREERTOS)
     xSemaphoreGive(m_serialMutex);
+#endif
 }
 
 float Lpf2Port::getValue(const Mode &modeData, uint8_t dataSet)
@@ -673,13 +660,13 @@ float Lpf2Port::getValue(const Mode &modeData, uint8_t dataSet)
     switch (modeData.format)
     {
     case DATA8:
-        value = parseData8(ptr) / pow10(modeData.decimals);
+        value = parseData8(ptr) / pow(10, modeData.decimals);
         break;
     case DATA16:
-        value = parseData16(ptr) / pow10(modeData.decimals);
+        value = parseData16(ptr) / pow(10, modeData.decimals);
         break;
     case DATA32:
-        value = parseData32(ptr) / pow10(modeData.decimals);
+        value = parseData32(ptr) / pow(10, modeData.decimals);
         break;
     case DATAF:
         value = parseDataF(ptr);
@@ -720,33 +707,7 @@ std::string Lpf2Port::formatValue(float value, const Mode &modeData)
 
 std::string Lpf2Port::convertValue(Mode modeData)
 {
-    auto &raw = modeData.rawData;
     std::string result;
-
-    // Determine byte size per dataset based on format
-    size_t bytesPerDataset;
-    switch (modeData.format)
-    {
-    case DATA8:
-        bytesPerDataset = 1;
-        break;
-    case DATA16:
-        bytesPerDataset = 2;
-        break;
-    case DATA32:
-    case DATAF:
-        bytesPerDataset = 4;
-        break;
-    default:
-        return "<unsupported format>";
-    }
-
-    // Check that rawData contains enough bytes
-    size_t expectedSize = static_cast<size_t>(modeData.data_sets) * bytesPerDataset;
-    if (raw.size() < expectedSize)
-    {
-        return "<invalid data length>";
-    }
 
     for (uint8_t i = 0; i < modeData.data_sets; ++i)
     {
@@ -754,7 +715,7 @@ std::string Lpf2Port::convertValue(Mode modeData)
         std::string part = formatValue(getValue(modeData, i), modeData);
 
         // Append with separator
-        if (!result.empty())
+        if (result.length())
         {
             result += "; ";
         }
@@ -801,7 +762,9 @@ int Lpf2Port::writeData(uint8_t modeNum, std::vector<uint8_t> data)
     uint8_t checksum = header ^ 0xFF;
     uint8_t b = (modeNum >= 8) ? 8 : 0;
 
+#if defined(LPF2_USE_FREERTOS)
     xSemaphoreTake(m_serialMutex, portMAX_DELAY);
+#endif
     {
         m_serial->write(header);
         checksum ^= b;
@@ -822,7 +785,9 @@ int Lpf2Port::writeData(uint8_t modeNum, std::vector<uint8_t> data)
         m_serial->write(checksum);
         m_serial->flush();
     }
+#if defined(LPF2_USE_FREERTOS)
     xSemaphoreGive(m_serialMutex);
+#endif
 
     return 0;
 }

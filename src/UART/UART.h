@@ -5,7 +5,7 @@
 /**
  * @class UartPort
  * @brief Abstract base class for UART port communication.
- * 
+ *
  * Provides an interface for UART serial communication operations including
  * initialization, data transmission/reception, and configuration management.
  * Derived classes must implement all pure virtual methods.

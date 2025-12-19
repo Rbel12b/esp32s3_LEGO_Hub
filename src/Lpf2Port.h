@@ -6,8 +6,6 @@
 
 #include <Arduino.h>
 #include <Stream.h>
-#include <HardwareSerial.h>
-#include <SoftwareSerial.h>
 #include "Lpf2Const.h"
 #include "Lpf2Serial.h"
 #include "Lpf2SerialDef.h"
@@ -15,9 +13,15 @@
 class Lpf2Port
 {
 public:
-    Lpf2Port(uint8_t rxPin, uint8_t txPin, int hwSerialNum) : m_rxPin(rxPin), m_txPin(txPin), m_hwSerialNum(hwSerialNum), m_deviceType(DeviceType::UNKNOWNDEVICE) {};
+    Lpf2Port(UartPort *serial) : m_serial(serial), m_parser(m_serial) {};
 
-    void init();
+    void init(
+#if defined(LPF2_USE_FREERTOS)
+        std::string taskName = "uartTask"
+#endif
+    );
+
+    void update();
 
     enum class LPF2_STATUS
     {
@@ -59,9 +63,9 @@ public:
 
             bool nullSupport() const { return val & (1 << 7); }
             bool mapping2() const { return val & (1 << 6); }
-            bool abs() const { return val & (1 << 4); }
-            bool rel() const { return val & (1 << 3); }
-            bool dis() const { return val & (1 << 2); }
+            bool m_abs() const { return val & (1 << 4); }
+            bool m_rel() const { return val & (1 << 3); }
+            bool m_dis() const { return val & (1 << 2); }
         };
         Mapping in, out;
         uint8_t data_sets = 0, format = 0, figures = 0, decimals = 0;
@@ -104,7 +108,7 @@ public:
     size_t getSpeed() const { return baud; }
     uint8_t getModeCount() const { return modes; }
     uint8_t getViewCount() const { return views; }
-    const std::vector<Mode>& getModes() const { return modeData; }
+    const std::vector<Mode> &getModes() const { return modeData; }
     uint8_t getModeComboCount() const { return comboNum; }
 
     uint16_t getModeCombo(uint8_t combo) const
@@ -129,9 +133,11 @@ private:
     bool nextModeExt = false;
 
 private:
+#if defined(LPF2_USE_FREERTOS)
     static void taskEntryPoint(void *pvParameters);
-
     void uartTask();
+#endif
+
     void parseMessage(const Lpf2Message &msg);
     void parseMessageCMD(const Lpf2Message &msg);
     void parseMessageInfo(const Lpf2Message &msg);
@@ -147,7 +153,7 @@ private:
 
     void resetDevice();
 
-    uint8_t process(unsigned long &start, unsigned long now);
+    uint8_t process(unsigned long now);
 
     /// Parse a signed 8-bit integer from raw bytes
     static float parseData8(const uint8_t *ptr);
@@ -162,17 +168,22 @@ private:
     static float parseDataF(const uint8_t *ptr);
 
 private:
-    uint8_t m_rxPin, m_txPin;
-    int m_hwSerialNum;
-    Stream *m_serial;
-    HardwareSerial *m_hwSerial;
-    SoftwareSerial *m_swSerial;
+    UartPort *m_serial;
+    Lpf2Parser m_parser;
+
+#if defined(LPF2_USE_FREERTOS)
     xQueueHandle m_serialMutex;
+#endif
 
     /**
      * Time of the last data received (millis since startup).
      */
     uint64_t m_timeStart = 0;
+
+    /**
+     * Time of the start of the current operation (millis since startup).
+     */
+    uint64_t m_start = 0;
 };
 
 #endif

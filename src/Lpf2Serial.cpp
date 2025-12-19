@@ -2,7 +2,7 @@
 #include "Lpf2SerialDef.h"
 
 #include <string>
-#include <format>
+#include <cstdio>
 
 std::vector<Lpf2Message> Lpf2Parser::update()
 {
@@ -95,6 +95,7 @@ void Lpf2Parser::printMessage(const Lpf2Message &msg)
     std::string str;
     if (msg.system)
     {
+        char buf[32];
         str += "Sys: ";
         switch (msg.header)
         {
@@ -102,25 +103,30 @@ void Lpf2Parser::printMessage(const Lpf2Message &msg)
             str += "ACK";
             break;
         case BYTE_NACK:
-        str += "NACK";
+            str += "NACK";
             break;
         case BYTE_SYNC:
             str += "SYNC";
             break;
         default:
-            str += std::format("Unknown (0x{:02X})", msg.header);
+            sprintf(buf, "Unknown (0x%02X)", msg.header);
+            str += buf;
             break;
         }
         LPF2_LOG_I("%s", str.c_str());
         return;
     }
 
-    str += std::format("Header: 0x{:02X}, Length: {}, MsgType: 0x{:02X}, Cmd: 0x{:02X}, Data: ", msg.header, msg.length, msg.msg, msg.cmd);
+    char buf[256];
+    sprintf(buf, "Header: 0x%02X, Length: %d, MsgType: 0x%02X, Cmd: 0x%02X, Data: ", msg.header, msg.length, msg.msg, msg.cmd);
+    str += buf;
 
     for (uint8_t b : msg.data)
     {
-        str += std::format("0x{:02X} ", b);
+        sprintf(buf, "0x%02X ", b);
+        str += buf;
     }
-    str += std::format(", C: 0x{:02X}", msg.checksum);
+    sprintf(buf, ", C: 0x%02X", msg.checksum);
+    str += buf;
     LPF2_LOG_I("%s", str.c_str());
 }

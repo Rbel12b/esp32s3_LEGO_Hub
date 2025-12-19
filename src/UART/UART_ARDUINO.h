@@ -8,42 +8,50 @@ class ArduinoUart;
 
 using Lpf2UartPort = ArduinoUart;
 
-class ArduinoUart : public UartPort {
+class ArduinoUart : public UartPort
+{
 public:
-    explicit ArduinoUart(HardwareSerial& serial)
+    explicit ArduinoUart(HardwareSerial &serial)
         : serial_(serial) {}
 
-    bool begin(uint32_t baudrate, uint32_t config = SERIAL_8N1, int = -1, int = -1) override {
+    bool begin(uint32_t baudrate, uint32_t config = SERIAL_8N1, int = -1, int = -1) override
+    {
         serial_.begin(baudrate, config);
         return true;
     }
 
-    void end() override {
+    void end() override
+    {
         serial_.end();
     }
 
-    void setBaudrate(uint32_t baudrate) override {
+    void setBaudrate(uint32_t baudrate) override
+    {
         serial_.begin(baudrate); // AVR has no dynamic baud change
     }
 
-    size_t write(const uint8_t* data, size_t length) override {
+    size_t write(const uint8_t *data, size_t length) override
+    {
         return serial_.write(data, length);
     }
 
-    int read() override {
+    int read() override
+    {
         return serial_.read();
     }
 
-    size_t available() override {
+    size_t available() override
+    {
         return serial_.available();
     }
 
-    void flush() override {
+    void flush() override
+    {
         serial_.flush();
     }
 
 private:
-    HardwareSerial& serial_;
+    HardwareSerial &serial_;
 };
 
 #endif
