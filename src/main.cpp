@@ -1,13 +1,14 @@
 #include "config.h"
 #include <Arduino.h>
-#include "Lpf2Port.h"
 
 #include "Manager/DeviceManager.h"
+#include "Lpf2Devices/DistanceSensor.h"
+#include "Lpf2Devices/BasicMotor.h"
 #include "Devices/esp32s3/device.h"
 
 Esp32s3IO io(1);
 
-Lpf2Port port0(&io);
+Lpf2DeviceManager port0(&io);
 
 Lpf2Parser *brick = nullptr;
 Lpf2Parser *sensor = nullptr;
@@ -27,7 +28,10 @@ void setup()
     Serial.begin(921600);
 
     io.getUart()->begin(115200, SERIAL_8N1, 12, 11);
-    port0.init();
+    auto pwm = dynamic_cast<Esp32s3PWM*>(io.getPWM());
+    if (pwm) {
+        pwm->init(5, 6);
+    }
 
     data.resize(4);
 }
@@ -35,43 +39,33 @@ void setup()
 void loop()
 {
     vTaskDelay(1);
-    // return;
 
-    if (!port0.deviceConnected())
-        return;
+    port0.update();
 
-    float value = port0.getValue(0, 0);
-
-    if (value > 25.0f)
-        value = 25.0f;
-
-    value = 25.0f - value;
-
-    if (value > 25.0f)
-        value = 0.0f;
-
-    const int LIGHT_MODE = 5;
-    if (LIGHT_MODE >= port0.getModes().size())
-        return;
-
-    auto &mode = port0.getModes()[LIGHT_MODE];
-
-    value = map(value, 0.0f, 25.0f, mode.SImin, mode.SImax);
-
-    if (value > mode.SImax)
-        value = mode.SImax;
-    else if (value < mode.SImin)
-        value = mode.SImin;
-
-    for (uint8_t i = 0; i < mode.data_sets; i++)
+    if (auto device = dynamic_cast<DistanceSensorControl*>(port0.device()))
     {
-        data[i] = value;
+        float value = device->getDistance();
+
+        if (value > 25.0f)
+            value = 25.0f;
+
+        value = 25.0f - value;
+
+        if (value > 25.0f)
+            value = 0.0f;
+
+        value = map(value, 0.0f, 25.0f, 0, 100);
+        if (value > 100)
+            value = 100;
+        else if (value < 0)
+            value = 0;
+
+        device->setLight(value, value, value, value);
     }
-
-    port0.writeData(LIGHT_MODE, data);
-
-    // printModes(port0);
-    // log_i("Distance: %s", port0.convertValue(0).c_str());
+    else if (auto device = dynamic_cast<BasicMotor*>(port0.device()))
+    {
+        device->setSpeed(-50);
+    }
 }
 
 void printModes(const Lpf2Port &port)
