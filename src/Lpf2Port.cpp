@@ -10,6 +10,7 @@ void Lpf2Port::init(
 #endif
 )
 {
+    m_serial->uartPinsOn();
 #if defined(LPF2_USE_FREERTOS)
     m_serialMutex = xSemaphoreCreateMutex();
     xTaskCreate(

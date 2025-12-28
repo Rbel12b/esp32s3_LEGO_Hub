@@ -3,7 +3,7 @@
 #define _LPF2_SERIAL_H_
 
 #include "config.h"
-#include "UART/UART.h"
+#include "IO/IO.h"
 #include <vector>
 
 struct Lpf2Message

@@ -13,7 +13,7 @@
 class Lpf2Port
 {
 public:
-    Lpf2Port(UartPort *serial) : m_serial(serial), m_parser(m_serial) {};
+    Lpf2Port(Lpf2IO *IO) : m_IO(IO), m_serial(m_IO->getUart()), m_pwm(m_IO->getPWM()) ,m_parser(m_serial) {};
 
     void init(
 #if defined(LPF2_USE_FREERTOS)
@@ -168,7 +168,9 @@ private:
     static float parseDataF(const uint8_t *ptr);
 
 private:
+    Lpf2IO *m_IO;
     UartPort *m_serial;
+    Lpf2PWM *m_pwm;
     Lpf2Parser m_parser;
 
 #if defined(LPF2_USE_FREERTOS)

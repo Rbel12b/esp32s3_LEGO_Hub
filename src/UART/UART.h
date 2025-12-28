@@ -21,10 +21,12 @@ public:
      * @param config The UART configuration flags (data bits, parity, stop bits).
      * @param rx_pin The RX (receive) pin number. Use -1 for default or auto-selection.
      * @param tx_pin The TX (transmit) pin number. Use -1 for default or auto-selection.
+     * @param id1_pin The analog input connected to the TX pin, external 47k pull-up is required.
+     * @param id2_pin The analog input connected to the RX pin, external 47k pull-up is required.
      * @return true if initialization was successful, false otherwise.
      * @note Must be called before any other UART operations.
      */
-    virtual bool begin(uint32_t baudrate, uint32_t config, int rx_pin = -1, int tx_pin = -1) = 0;
+    virtual bool begin(uint32_t baudrate, uint32_t config, int rx_pin = -1, int tx_pin = -1, int id1_pin = -1, int id2_pin = -1) = 0;
 
     /**
      * @brief Close and deinitialize the UART port.
@@ -76,4 +78,33 @@ public:
     {
         return write(&byte, 1);
     }
+
+    /**
+     * @brief Set the state of the UART pins (high impedance or active).
+     * @param highZ true to set pins to high impedance, false for active state.
+     */
+    virtual void setUartPinsState(bool highZ) = 0;
+
+    /**
+     * @brief Set UART pins to high impedance state.
+     */
+    void uartPinsOff()
+    {
+        setUartPinsState(true);
+    }
+
+    /**
+     * @brief Set UART pins to active state (not high impedance).
+     */
+    void uartPinsOn()
+    {
+        setUartPinsState(false);
+    }
+
+    /**
+     * @brief Read voltage from the specified analog channel.
+     * @param ch The analog channel number to read from. (e.g. 0 for ID1, 1 for ID2, if >1 ID2 is returned)
+     * @return The voltage value read from the channel.
+     */
+    virtual float readCh(uint8_t ch) = 0;
 };
