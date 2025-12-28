@@ -3,17 +3,17 @@
 #include <stdint.h>
 
 /**
- * @class UartPort
+ * @class Lpf2Uart
  * @brief Abstract base class for UART port communication.
  *
  * Provides an interface for UART serial communication operations including
  * initialization, data transmission/reception, and configuration management.
  * Derived classes must implement all pure virtual methods.
  */
-class UartPort
+class Lpf2Uart
 {
 public:
-    virtual ~UartPort() = default;
+    virtual ~Lpf2Uart() = default;
 
     /**
      * @brief Initialize the UART port with the specified baudrate and configuration.

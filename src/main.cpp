@@ -2,15 +2,11 @@
 #include <Arduino.h>
 #include "Lpf2Port.h"
 
-#if defined(ESP32)
-#include "UART/UART_ESP32.h"
-Lpf2UartPort uart(1);
-#else
-#include "UART/UART_ARDUINO.h"
-Lpf2UartPort uart(Serial);
-#endif
+#include "Devices/esp32s3/device.h"
 
-Lpf2Port port0(&uart);
+Esp32s3IO io(1);
+
+Lpf2Port port0(&io);
 
 Lpf2Parser *brick = nullptr;
 Lpf2Parser *sensor = nullptr;
@@ -26,16 +22,10 @@ float map(float x, float in_min, float in_max, float out_min, float out_max)
 
 void setup()
 {
-#if defined(ESP32)
     heap_caps_check_integrity_all(true);
-#endif
     Serial.begin(921600);
 
-#if defined(ESP32)
-    uart.begin(115200, SERIAL_8N1, 12, 11);
-#else
-    uart.begin(115200, SERIAL_8N1); // cannot set pins on arduino uno
-#endif
+    io.getUart()->begin(115200, SERIAL_8N1, 12, 11);
     port0.init();
 
     data.resize(4);
@@ -43,11 +33,7 @@ void setup()
 
 void loop()
 {
-#if defined(ESP32)
     vTaskDelay(1);
-#else
-    port0.update();
-#endif
     // return;
 
     if (!port0.deviceConnected())

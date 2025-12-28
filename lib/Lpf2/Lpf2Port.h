@@ -169,7 +169,7 @@ private:
 
 private:
     Lpf2IO *m_IO;
-    UartPort *m_serial;
+    Lpf2Uart *m_serial;
     Lpf2PWM *m_pwm;
     Lpf2Parser m_parser;
 

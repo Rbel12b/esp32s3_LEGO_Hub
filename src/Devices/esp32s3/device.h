@@ -1,7 +1,7 @@
 #pragma once
-#include "../../config.h"
-#include "../../UART/UART.h"
-#include "../../IO/IO.h"
+#include "config.h"
+#include "UART/UART.h"
+#include "IO/IO.h"
 
 #ifdef ESP32
 
@@ -14,7 +14,7 @@ class Esp32s3PWM;
 using Lpf2UartPort = Esp32s3Uart;
 using Lpf2PwmPort = Esp32s3PWM;
 
-class Esp32s3Uart : public UartPort
+class Esp32s3Uart : public Lpf2Uart
 {
 public:
     explicit Esp32s3Uart(int uart_num)
@@ -163,6 +163,25 @@ private:
     uint8_t channel2_ = 1;
     uint32_t freq_ = 1000; // 1 kHz
     uint8_t resolution_ = 8; // 8-bit resolution
+};
+
+class Esp32s3IO : public Lpf2IO
+{
+public:
+    Esp32s3IO(int uartNum) : m_uart(uartNum) {}
+
+    Lpf2PWM* getPWM() override
+    {
+        return &m_pwm;
+    }
+
+    Lpf2Uart* getUart() override
+    {
+        return &m_uart;
+    }
+private:
+    Esp32s3Uart m_uart;
+    Esp32s3PWM m_pwm;
 };
 
 #endif // ESP32

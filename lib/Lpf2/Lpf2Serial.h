@@ -20,7 +20,7 @@ struct Lpf2Message
 class Lpf2Parser
 {
 public:
-    Lpf2Parser(UartPort *serial) : m_serial(serial) {}
+    Lpf2Parser(Lpf2Uart *serial) : m_serial(serial) {}
 
     std::vector<Lpf2Message> update();
     static void printMessage(const Lpf2Message &msg);
@@ -31,7 +31,7 @@ private:
     uint8_t getChecksum() { return checksum; }
 
 private:
-    UartPort *m_serial;
+    Lpf2Uart *m_serial;
     std::vector<uint8_t> buffer;
     uint8_t checksum;
 };

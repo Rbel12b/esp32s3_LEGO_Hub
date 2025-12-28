@@ -11,7 +11,7 @@ class Lpf2IO
 {
 public:
     virtual ~Lpf2IO() = default;
-    virtual UartPort* getUart() = 0;
+    virtual Lpf2Uart* getUart() = 0;
     virtual Lpf2PWM* getPWM() = 0;
 };
 
