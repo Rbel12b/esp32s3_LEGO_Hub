@@ -27,11 +27,7 @@ void setup()
     heap_caps_check_integrity_all(true);
     Serial.begin(921600);
 
-    io.getUart()->begin(115200, SERIAL_8N1, 12, 11);
-    auto pwm = dynamic_cast<Esp32s3PWM*>(io.getPWM());
-    if (pwm) {
-        pwm->init(5, 6);
-    }
+    io.init(18, 17, 17, 18, 4, 5);
 
     data.resize(4);
 }

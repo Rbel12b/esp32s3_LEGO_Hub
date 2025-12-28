@@ -179,9 +179,43 @@ public:
     {
         return &m_uart;
     }
+
+
+    /**
+     * @brief Initialize the IO ports.
+     * @param rx_pin The RX (receive) pin number. Use -1 for default.
+     * @param tx_pin The TX (transmit) pin number. Use -1 for default.
+     * @param id1_pin The analog input connected to the TX pin, external 47k pull-up is required. (Can be the same as tx_pin)
+     * @param id2_pin The analog input connected to the RX pin, external 47k pull-up is required. (Can be the same as rx_pin)
+     * @param pwm_pin1 The first PWM output pin. Use -1 for no PWM.
+     * @param pwm_pin2 The second PWM output pin. Use -1 for no PWM.
+     * @param freq The PWM frequency in Hz.
+     * @param resolution The PWM resolution in bits.
+     * @param channel1 The PWM channel for the first pin.
+     * @param channel2 The PWM channel for the second pin.
+     * @return 0 if initialization was successful, -1 otherwise.
+     * @note Must be called before any IO operations. (Before calling init on Lpf2Port or update on Lpf2DeviceManager)
+     */
+    int init(int rx_pin = -1, int tx_pin = -1, int id1_pin = -1, int id2_pin = -1, int pwm_pin1 = -1, int pwm_pin2 = -1, uint32_t freq = 1000, uint8_t channel1 = 0, uint8_t channel2 = 1)
+    {
+        if (!m_uart.begin(115200, SERIAL_8N1, rx_pin, tx_pin, id1_pin, id2_pin)) {
+            return -1;
+        }
+        if (m_pwm.init(pwm_pin1, pwm_pin2, freq, 8, channel1, channel2) != 0) {
+            return -1;
+        }
+        m_inited = true;
+        return 0;
+    }
+
+    bool ready() const override
+    {
+        return m_inited;
+    }
 private:
     Esp32s3Uart m_uart;
     Esp32s3PWM m_pwm;
+    bool m_inited = false;
 };
 
 #endif // ESP32
