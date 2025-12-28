@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include "Lpf2Port.h"
 
+#include "Manager/DeviceManager.h"
 #include "Devices/esp32s3/device.h"
 
 Esp32s3IO io(1);
