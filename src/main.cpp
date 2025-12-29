@@ -25,7 +25,15 @@ float map(float x, float in_min, float in_max, float out_min, float out_max)
 void setup()
 {
     heap_caps_check_integrity_all(true);
-    Serial.begin(921600);
+    Serial.begin(115200);
+
+    auto factories = Lpf2DeviceRegistry::instance().factories();
+    size_t count = Lpf2DeviceRegistry::instance().count();
+
+    for (size_t i = 0; i < count; ++i)
+    {
+        Serial.printf("Registered factory %zu: %s\n", i, factories[i]->name());
+    }
 
     io.init(18, 17, 17, 18, 4, 5);
 
@@ -38,7 +46,11 @@ void loop()
 
     port0.update();
 
-    if (auto device = dynamic_cast<DistanceSensorControl*>(port0.device()))
+    if (!port0.device())
+        return;
+
+    if (auto device = static_cast<TechnicDistanceSensorControl*>(
+        port0.device()->getCapability(TechnicDistanceSensor::CAP)))
     {
         float value = device->getDistance();
 
@@ -58,7 +70,8 @@ void loop()
 
         device->setLight(value, value, value, value);
     }
-    else if (auto device = dynamic_cast<BasicMotor*>(port0.device()))
+    else if (auto device = static_cast<BasicMotorControl*>(
+        port0.device()->getCapability(BasicMotor::CAP)))
     {
         device->setSpeed(-50);
     }
