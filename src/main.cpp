@@ -35,10 +35,12 @@ void setup()
         Serial.printf("Registered factory %zu: %s\n", i, factories[i]->name());
     }
 
-    io.init(18, 17, 17, 18, 4, 5);
+    io.init(2, 1, -1, -1, 42, 41);
 
     data.resize(4);
 }
+
+Lpf2DeviceType lastType = Lpf2DeviceType::UNKNOWNDEVICE;
 
 void loop()
 {
@@ -48,12 +50,11 @@ void loop()
 
     if (!port0.device())
         return;
-
-    static Lpf2DeviceType lastType = Lpf2DeviceType::UNKNOWNDEVICE;
+        
     if (lastType != port0.getDeviceType())
     {
         lastType = port0.getDeviceType();
-        Serial.printf("Device connected: 0x%02X\n", (unsigned int)lastType);
+        LPF2_LOG_I("Device connected: 0x%02X\n", (unsigned int)lastType);
     }
 
     if (auto device = static_cast<TechnicDistanceSensorControl*>(

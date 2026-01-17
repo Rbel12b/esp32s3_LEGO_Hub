@@ -196,7 +196,7 @@ public:
      * @return 0 if initialization was successful, -1 otherwise.
      * @note Must be called before any IO operations. (Before calling init on Lpf2Port or update on Lpf2DeviceManager)
      */
-    int init(int rx_pin = -1, int tx_pin = -1, int id1_pin = -1, int id2_pin = -1, int pwm_pin1 = -1, int pwm_pin2 = -1, uint32_t freq = 1000, uint8_t channel1 = 0, uint8_t channel2 = 1)
+    int init(int tx_pin = -1, int rx_pin = -1, int id1_pin = -1, int id2_pin = -1, int pwm_pin1 = -1, int pwm_pin2 = -1, uint32_t freq = 1000, uint8_t channel1 = 0, uint8_t channel2 = 1)
     {
         if (!m_uart.begin(115200, SERIAL_8N1, rx_pin, tx_pin, id1_pin, id2_pin)) {
             return -1;
