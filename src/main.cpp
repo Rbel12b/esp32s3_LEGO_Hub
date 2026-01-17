@@ -49,6 +49,13 @@ void loop()
     if (!port0.device())
         return;
 
+    static Lpf2DeviceType lastType = Lpf2DeviceType::UNKNOWNDEVICE;
+    if (lastType != port0.getDeviceType())
+    {
+        lastType = port0.getDeviceType();
+        Serial.printf("Device connected: 0x%02X\n", (unsigned int)lastType);
+    }
+
     if (auto device = static_cast<TechnicDistanceSensorControl*>(
         port0.device()->getCapability(TechnicDistanceSensor::CAP)))
     {
