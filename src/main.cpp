@@ -47,15 +47,15 @@ void loop()
 {
     vTaskDelay(1);
     port0.update();
-
-    if (!port0.device())
-        return;
         
     if (lastType != port0.getDeviceType())
     {
         lastType = port0.getDeviceType();
-        LPF2_LOG_I("Device connected: 0x%02X\n", (unsigned int)lastType);
+        LPF2_LOG_I("New device connected: 0x%02X", (unsigned int)lastType);
     }
+
+    if (!port0.device())
+        return;
 
     if (auto device = static_cast<TechnicDistanceSensorControl*>(
         port0.device()->getCapability(TechnicDistanceSensor::CAP)))
