@@ -35,9 +35,10 @@ void setup()
         Serial.printf("Registered factory %zu: %s\n", i, factories[i]->name());
     }
 
-    io.init(2, 1, -1, -1, 42, 41);
-
     data.resize(4);
+
+    io.init(2, 1, -1, -1, 42, 41);
+    port0.init();
 }
 
 Lpf2DeviceType lastType = Lpf2DeviceType::UNKNOWNDEVICE;
@@ -45,8 +46,6 @@ Lpf2DeviceType lastType = Lpf2DeviceType::UNKNOWNDEVICE;
 void loop()
 {
     vTaskDelay(1);
-
-    port0.update();
 
     if (!port0.device())
         return;

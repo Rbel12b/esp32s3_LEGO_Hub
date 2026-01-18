@@ -19,7 +19,8 @@ class Esp32s3Uart : public Lpf2Uart
 public:
     explicit Esp32s3Uart(int uart_num)
         : serial_(uart_num)
-    {}
+    {
+    }
 
     bool begin(uint32_t baudrate,
                uint32_t config = SERIAL_8N1,
@@ -28,18 +29,20 @@ public:
                int id1_pin = -1,
                int id2_pin = -1) override
     {
-        rx_pin_  = rx_pin;
-        tx_pin_  = tx_pin;
+        rx_pin_ = rx_pin;
+        tx_pin_ = tx_pin;
         id1_pin_ = id1_pin;
         id2_pin_ = id2_pin;
-        config_  = config;
-        baud_    = baudrate;
+        config_ = config;
+        baud_ = baudrate;
 
         // Configure ADC pins if provided
-        if (id1_pin_ >= 0) {
+        if (id1_pin_ >= 0)
+        {
             pinMode(id1_pin_, INPUT);
         }
-        if (id2_pin_ >= 0) {
+        if (id2_pin_ >= 0)
+        {
             pinMode(id2_pin_, INPUT);
         }
 
@@ -70,7 +73,7 @@ public:
         return serial_.read();
     }
 
-    size_t available() override
+    int available() override
     {
         return serial_.available();
     }
@@ -82,14 +85,22 @@ public:
 
     void setUartPinsState(bool highZ) override
     {
-        if (highZ) {
+        LPF2_LOG_D("Setting uart pins state: highZ=%s", highZ ? "true" : "false");
+
+        if (highZ)
+        {
             // Detach UART pins → high impedance
             serial_.end();
-            if (rx_pin_ >= 0) pinMode(rx_pin_, INPUT);
-            if (tx_pin_ >= 0) pinMode(tx_pin_, INPUT);
-        } else {
+            if (rx_pin_ >= 0)
+                pinMode(rx_pin_, INPUT);
+            if (tx_pin_ >= 0)
+                pinMode(tx_pin_, INPUT);
+        }
+        else
+        {
             // Reattach UART pins
-            if (rx_pin_ >= 0 || tx_pin_ >= 0) {
+            if (rx_pin_ >= 0 || tx_pin_ >= 0)
+            {
                 serial_.end();
                 serial_.begin(baud_, config_, rx_pin_, tx_pin_);
             }
@@ -100,13 +111,17 @@ public:
     {
         int pin = -1;
 
-        if (ch == 0) {
+        if (ch == 0)
+        {
             pin = id1_pin_;
-        } else {
+        }
+        else
+        {
             pin = id2_pin_;
         }
 
-        if (pin < 0) {
+        if (pin < 0)
+        {
             return 0.0f;
         }
 
@@ -119,12 +134,12 @@ public:
 private:
     HardwareSerial serial_;
 
-    int rx_pin_  = -1;
-    int tx_pin_  = -1;
+    int rx_pin_ = -1;
+    int tx_pin_ = -1;
     int id1_pin_ = -1;
     int id2_pin_ = -1;
 
-    uint32_t baud_   = 115200;
+    uint32_t baud_ = 115200;
     uint32_t config_ = SERIAL_8N1;
 };
 
@@ -161,7 +176,7 @@ private:
     int pin2_ = -1;
     uint8_t channel1_ = 0;
     uint8_t channel2_ = 1;
-    uint32_t freq_ = 1000; // 1 kHz
+    uint32_t freq_ = 1000;   // 1 kHz
     uint8_t resolution_ = 8; // 8-bit resolution
 };
 
@@ -170,16 +185,15 @@ class Esp32s3IO : public Lpf2IO
 public:
     Esp32s3IO(int uartNum) : m_uart(uartNum) {}
 
-    Lpf2PWM* getPWM() override
+    Lpf2PWM *getPWM() override
     {
         return &m_pwm;
     }
 
-    Lpf2Uart* getUart() override
+    Lpf2Uart *getUart() override
     {
         return &m_uart;
     }
-
 
     /**
      * @brief Initialize the IO ports.
@@ -198,10 +212,12 @@ public:
      */
     int init(int tx_pin = -1, int rx_pin = -1, int id1_pin = -1, int id2_pin = -1, int pwm_pin1 = -1, int pwm_pin2 = -1, uint32_t freq = 1000, uint8_t channel1 = 0, uint8_t channel2 = 1)
     {
-        if (!m_uart.begin(115200, SERIAL_8N1, rx_pin, tx_pin, id1_pin, id2_pin)) {
+        if (!m_uart.begin(115200, SERIAL_8N1, rx_pin, tx_pin, id1_pin, id2_pin))
+        {
             return -1;
         }
-        if (m_pwm.init(pwm_pin1, pwm_pin2, freq, 8, channel1, channel2) != 0) {
+        if (m_pwm.init(pwm_pin1, pwm_pin2, freq, 8, channel1, channel2) != 0)
+        {
             return -1;
         }
         m_inited = true;
@@ -212,6 +228,7 @@ public:
     {
         return m_inited;
     }
+
 private:
     Esp32s3Uart m_uart;
     Esp32s3PWM m_pwm;
