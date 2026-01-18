@@ -101,6 +101,8 @@ public:
             // Reattach UART pins
             if (rx_pin_ >= 0 || tx_pin_ >= 0)
             {
+                if (rx_pin_ >= 0) pinMode(rx_pin_, INPUT);
+                if (tx_pin_ >= 0) pinMode(tx_pin_, INPUT);
                 serial_.end();
                 serial_.begin(baud_, config_, rx_pin_, tx_pin_);
             }
