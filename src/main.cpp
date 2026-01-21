@@ -6,9 +6,13 @@
 #include "Lpf2Devices/BasicMotor.h"
 #include "Devices/esp32s3/device.h"
 
-Esp32s3IO io(1);
+#include "Board.h"
 
-Lpf2DeviceManager port0(&io);
+Esp32s3IO portA_IO(PORT_A_HWS);
+Esp32s3IO portB_IO(PORT_B_HWS);
+
+Lpf2DeviceManager portA(&portA_IO);
+Lpf2DeviceManager portB(&portB_IO);
 
 Lpf2Parser *brick = nullptr;
 Lpf2Parser *sensor = nullptr;
@@ -37,52 +41,100 @@ void setup()
 
     data.resize(4);
 
-    io.init(2, 1, 2, 1, 42, 41);
-    port0.init();
+    portA_IO.init(PORT_A_ID_1, PORT_A_ID_2,
+        PORT_A_ID_1, PORT_A_ID_2,
+        PORT_A_PWM_1, PORT_A_PWM_2, PORT_A_PWM_UNIT, PORT_A_PWM_TIMER, 1000);
+    portB_IO.init(PORT_B_ID_1, PORT_B_ID_2,
+        PORT_B_ID_1, PORT_B_ID_2,
+        PORT_B_PWM_1, PORT_B_PWM_2, PORT_B_PWM_UNIT, PORT_B_PWM_TIMER, 1000);
+    portA.init();
+    portB.init();
 }
 
 Lpf2DeviceType lastType = Lpf2DeviceType::UNKNOWNDEVICE;
 
+bool useSensorReading = false;
+int sensorReading = 0;
+
 void loop()
 {
     vTaskDelay(1);
-    port0.update();
+    portA.update();
+    // portB.update();
+
+    bool hasSensor = false;
         
-    if (lastType != port0.getDeviceType())
+    if (portA.device())
     {
-        lastType = port0.getDeviceType();
-        LPF2_LOG_I("New device connected: 0x%02X", (unsigned int)lastType);
+        if (auto device = static_cast<TechnicDistanceSensorControl*>(
+            portA.device()->getCapability(TechnicDistanceSensor::CAP)))
+        {
+            float value = device->getDistance();
+
+            if (value > 25.0f)
+                value = 25.0f;
+
+            value = 25.0f - value;
+
+            if (value > 25.0f)
+                value = 0.0f;
+
+            value = map(value, 0.0f, 25.0f, 0, 100);
+            if (value > 100)
+                value = 100;
+            else if (value < 0)
+                value = 0;
+
+            device->setLight(value, value, value, value);
+            hasSensor = true;
+            sensorReading = static_cast<int>(value);
+        }
+        else if (auto device = static_cast<BasicMotorControl*>(
+            portA.device()->getCapability(BasicMotor::CAP)))
+        {
+            if (!useSensorReading)
+                device->setSpeed(-50);
+            else
+                device->setSpeed(sensorReading);
+        }
     }
 
-    if (!port0.device())
-        return;
+    // if (portB.device())
+    // {
+    //     if (auto device = static_cast<TechnicDistanceSensorControl*>(
+    //         portB.device()->getCapability(TechnicDistanceSensor::CAP)))
+    //     {
+    //         float value = device->getDistance();
 
-    if (auto device = static_cast<TechnicDistanceSensorControl*>(
-        port0.device()->getCapability(TechnicDistanceSensor::CAP)))
-    {
-        float value = device->getDistance();
+    //         if (value > 25.0f)
+    //             value = 25.0f;
 
-        if (value > 25.0f)
-            value = 25.0f;
+    //         value = 25.0f - value;
 
-        value = 25.0f - value;
+    //         if (value > 25.0f)
+    //             value = 0.0f;
 
-        if (value > 25.0f)
-            value = 0.0f;
+    //         value = map(value, 0.0f, 25.0f, 0, 100);
+    //         if (value > 100)
+    //             value = 100;
+    //         else if (value < 0)
+    //             value = 0;
 
-        value = map(value, 0.0f, 25.0f, 0, 100);
-        if (value > 100)
-            value = 100;
-        else if (value < 0)
-            value = 0;
+    //         device->setLight(value, value, value, value);
+    //         hasSensor = true;
+    //         sensorReading = static_cast<int>(value);
+    //     }
+    //     else if (auto device = static_cast<BasicMotorControl*>(
+    //         portB.device()->getCapability(BasicMotor::CAP)))
+    //     {
+    //         if (!useSensorReading)
+    //             device->setSpeed(50);
+    //         else
+    //             device->setSpeed(sensorReading);
+    //     }
+    // }
 
-        device->setLight(value, value, value, value);
-    }
-    else if (auto device = static_cast<BasicMotorControl*>(
-        port0.device()->getCapability(BasicMotor::CAP)))
-    {
-        device->setSpeed(-50);
-    }
+    useSensorReading = hasSensor;
 }
 
 void printModes(const Lpf2Port &port)

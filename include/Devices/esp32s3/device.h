@@ -9,10 +9,10 @@
 #include <HardwareSerial.h>
 
 class Esp32s3Uart;
-class Esp32s3PWM;
+class Esp32s3MotorPWM;
 
 using Lpf2UartPort = Esp32s3Uart;
-using Lpf2PwmPort = Esp32s3PWM;
+using Lpf2PwmPort = Esp32s3MotorPWM;
 
 class Esp32s3Uart : public Lpf2Uart
 {
@@ -101,8 +101,10 @@ public:
             // Reattach UART pins
             if (rx_pin_ >= 0 || tx_pin_ >= 0)
             {
-                if (rx_pin_ >= 0) pinMode(rx_pin_, INPUT);
-                if (tx_pin_ >= 0) pinMode(tx_pin_, INPUT);
+                if (rx_pin_ >= 0)
+                    pinMode(rx_pin_, INPUT);
+                if (tx_pin_ >= 0)
+                    pinMode(tx_pin_, INPUT);
                 serial_.end();
                 serial_.begin(baud_, config_, rx_pin_, tx_pin_);
             }
@@ -145,41 +147,60 @@ private:
     uint32_t config_ = SERIAL_8N1;
 };
 
-class Esp32s3PWM : public Lpf2PWM
+#include "driver/mcpwm.h"
+
+class Esp32s3MotorPWM : public Lpf2PWM
 {
 public:
-    explicit Esp32s3PWM() = default;
-    int init(int pin1, int pin2, uint32_t freq = 1000, uint8_t resolution = 8, uint8_t channel1 = 0, uint8_t channel2 = 1)
+    explicit Esp32s3MotorPWM() = default;
+
+    int init(int pin1,
+             int pin2,
+             mcpwm_unit_t unit,
+             mcpwm_timer_t timer,
+             uint32_t freq = 1000)
     {
         pin1_ = pin1;
         pin2_ = pin2;
+        unit_ = unit;
+        timer_ = timer;
         freq_ = freq;
-        resolution_ = resolution;
-        channel1_ = channel1;
-        channel2_ = channel2;
 
-        ledcSetup(channel1_, freq_, resolution_);
-        ledcAttachPin(pin1_, channel1_);
+        // Attach GPIOs
+        mcpwm_gpio_init(unit_, mcpwm_io_signals_t(MCPWM0A + timer_ * 2), pin1_);
+        mcpwm_gpio_init(unit_, mcpwm_io_signals_t(MCPWM0B + timer_ * 2), pin2_);
 
-        ledcSetup(channel2_, freq_, resolution_);
-        ledcAttachPin(pin2_, channel2_);
+        mcpwm_config_t cfg = {};
+        cfg.frequency = freq_;
+        cfg.cmpr_a = 0;
+        cfg.cmpr_b = 0;
+        cfg.counter_mode = MCPWM_UP_COUNTER;
+        cfg.duty_mode = MCPWM_DUTY_MODE_0;
+
+        mcpwm_init(unit_, timer_, &cfg);
 
         return 0;
     }
 
     void out(uint8_t ch1, uint8_t ch2) override
     {
-        ledcWrite(channel1_, ch1);
-        ledcWrite(channel2_, ch2);
+        // Convert 0–255 → percentage
+        float dutyA = (ch1 * 100.0f) / 255.0f;
+        float dutyB = (ch2 * 100.0f) / 255.0f;
+
+        mcpwm_set_duty(unit_, timer_, MCPWM_OPR_A, dutyA);
+        mcpwm_set_duty(unit_, timer_, MCPWM_OPR_B, dutyB);
+
+        mcpwm_set_duty_type(unit_, timer_, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
+        mcpwm_set_duty_type(unit_, timer_, MCPWM_OPR_B, MCPWM_DUTY_MODE_0);
     }
 
 private:
     int pin1_ = -1;
     int pin2_ = -1;
-    uint8_t channel1_ = 0;
-    uint8_t channel2_ = 1;
-    uint32_t freq_ = 1000;   // 1 kHz
-    uint8_t resolution_ = 8; // 8-bit resolution
+    mcpwm_unit_t unit_;
+    mcpwm_timer_t timer_;
+    uint32_t freq_ = 1000;
 };
 
 class Esp32s3IO : public Lpf2IO
@@ -212,13 +233,13 @@ public:
      * @return 0 if initialization was successful, -1 otherwise.
      * @note Must be called before any IO operations. (Before calling init on Lpf2Port or update on Lpf2DeviceManager)
      */
-    int init(int tx_pin = -1, int rx_pin = -1, int id1_pin = -1, int id2_pin = -1, int pwm_pin1 = -1, int pwm_pin2 = -1, uint32_t freq = 1000, uint8_t channel1 = 0, uint8_t channel2 = 1)
+    int init(int tx_pin = -1, int rx_pin = -1, int id1_pin = -1, int id2_pin = -1, int pwm_pin1 = -1, int pwm_pin2 = -1, mcpwm_unit_t unit = mcpwm_unit_t(0), mcpwm_timer_t timer = mcpwm_timer_t(0), uint32_t freq = 1000)
     {
         if (!m_uart.begin(115200, SERIAL_8N1, rx_pin, tx_pin, id1_pin, id2_pin))
         {
             return -1;
         }
-        if (m_pwm.init(pwm_pin1, pwm_pin2, freq, 8, channel1, channel2) != 0)
+        if (m_pwm.init(pwm_pin1, pwm_pin2, unit, timer, freq) != 0)
         {
             return -1;
         }
@@ -233,7 +254,7 @@ public:
 
 private:
     Esp32s3Uart m_uart;
-    Esp32s3PWM m_pwm;
+    Esp32s3MotorPWM m_pwm;
     bool m_inited = false;
 };
 
