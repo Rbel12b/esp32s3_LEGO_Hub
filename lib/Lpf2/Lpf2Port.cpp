@@ -134,7 +134,7 @@ void Lpf2Port::update()
                        ch1min, ch1max, ch1diff);
 
             static int detectionCounter = 0;
-            static const int detectionThreshold = 2; // Number of consecutive detections required - 1, so 2 means 3 times
+            static const int detectionThreshold = 5; // Number of consecutive detections required - 1, so 2 means 3 times
             static int lastDetectedType = -1;
             if (ch1diff >= 2.5f)
             {
@@ -147,7 +147,7 @@ void Lpf2Port::update()
                     lastDetectedType = 0;
                     detectionCounter = 0;
                 }
-                if (detectionCounter >= detectionThreshold)
+                if (detectionCounter >= 2) // Uart thresshold is lower on purpose, for faster communication
                 {
                     // Serial protocol
                     m_dumb = false;
@@ -234,6 +234,13 @@ void Lpf2Port::update()
     for (const auto &msg : messages)
     {
         LPF2_DEBUG_EXPR_V(
+            if ((m_status == LPF2_STATUS::STATUS_SPEED_CHANGE || m_status == LPF2_STATUS::STATUS_ACK_WAIT) &&
+                (!msg.system || msg.header != BYTE_ACK))
+            {
+                // do not print SYNC and other messages because, they're not relevant in this state
+                // (Speed change - lot of garbage is received).
+                break;
+            }
             m_parser.printMessage(msg););
         if (m_status == LPF2_STATUS::STATUS_SYNCING)
         {
@@ -267,7 +274,7 @@ end_loop:
 
 uint8_t Lpf2Port::process(unsigned long now)
 {
-    if (now - m_startRec > 2000)
+    if (now - m_startRec > 1500)
     {
         if (m_deviceConnected)
         {
@@ -475,10 +482,7 @@ void Lpf2Port::resetDevice()
     m_deviceType = Lpf2DeviceType::UNKNOWNDEVICE;
     modes = views = 0;
     comboNum = 0;
-    for (int i = 0; i < modes; i++)
-    {
-        modeData[i] = Mode();
-    }
+    modeData.resize(0);
     for (size_t i = 0; i < 16; i++)
     {
         modeCombos[i] = 0;
@@ -502,10 +506,7 @@ void Lpf2Port::enterUartState()
     m_deviceType = Lpf2DeviceType::UNKNOWNDEVICE;
     modes = views = 0;
     comboNum = 0;
-    for (int i = 0; i < modes; i++)
-    {
-        modeData[i] = Mode();
-    }
+    modeData.resize(0);
     for (size_t i = 0; i < 16; i++)
     {
         modeCombos[i] = 0;
