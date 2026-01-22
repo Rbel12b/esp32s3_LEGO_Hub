@@ -5,6 +5,7 @@
 #include "Lpf2Devices/DistanceSensor.h"
 #include "Lpf2Devices/ColorSensor.h"
 #include "Lpf2Devices/BasicMotor.h"
+#include "Lpf2Devices/EncoderMotor.h"
 #include "Devices/esp32s3/device.h"
 
 #include "Board.h"
@@ -31,7 +32,7 @@ float map(float x, float in_min, float in_max, float out_min, float out_max)
 void setup()
 {
     heap_caps_check_integrity_all(true);
-    Serial.begin(115200);
+    Serial.begin(981200);
     data.resize(4);
 
     BuitlInRGB_init();
@@ -94,6 +95,12 @@ void loop()
                 device->setSpeed(-50);
             else
                 device->setSpeed(sensorReading);
+        }
+        else if (auto device = static_cast<EncoderMotorControl*>(
+            portA.device()->getCapability(EncoderMotor::CAP)))
+        {
+            BuitlInRGB_setColor(50, 0, 50); // set color to indicate that a smart motor is connected
+            device->moveToAbsPos(180, 50);
         }
         else if (auto device = static_cast<TechnicColorSensorControl*>(
             portA.device()->getCapability(TechnicColorSensor::CAP)))
