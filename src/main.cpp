@@ -3,10 +3,12 @@
 
 #include "Manager/DeviceManager.h"
 #include "Lpf2Devices/DistanceSensor.h"
+#include "Lpf2Devices/ColorSensor.h"
 #include "Lpf2Devices/BasicMotor.h"
 #include "Devices/esp32s3/device.h"
 
 #include "Board.h"
+#include "BuiltInRGB.h"
 
 Esp32s3IO portA_IO(PORT_A_HWS);
 Esp32s3IO portB_IO(PORT_B_HWS);
@@ -30,16 +32,10 @@ void setup()
 {
     heap_caps_check_integrity_all(true);
     Serial.begin(115200);
-
-    auto factories = Lpf2DeviceRegistry::instance().factories();
-    size_t count = Lpf2DeviceRegistry::instance().count();
-
-    for (size_t i = 0; i < count; ++i)
-    {
-        Serial.printf("Registered factory %zu: %s\n", i, factories[i]->name());
-    }
-
     data.resize(4);
+
+    BuitlInRGB_init();
+    BuitlInRGB_setColor(0, 10, 0);
 
     portA_IO.init(PORT_A_ID_1, PORT_A_ID_2,
         PORT_A_ID_1, PORT_A_ID_2,
@@ -69,6 +65,7 @@ void loop()
         if (auto device = static_cast<TechnicDistanceSensorControl*>(
             portA.device()->getCapability(TechnicDistanceSensor::CAP)))
         {
+            BuitlInRGB_setColor(0, 10, 50); // set color to indicate that a distance sensor is connected
             float value = device->getDistance();
 
             if (value > 25.0f)
@@ -92,47 +89,69 @@ void loop()
         else if (auto device = static_cast<BasicMotorControl*>(
             portA.device()->getCapability(BasicMotor::CAP)))
         {
+            BuitlInRGB_setColor(50, 10, 0); // set color to indicate that a motor is connected
             if (!useSensorReading)
                 device->setSpeed(-50);
             else
                 device->setSpeed(sensorReading);
         }
+        else if (auto device = static_cast<TechnicColorSensorControl*>(
+            portA.device()->getCapability(TechnicColorSensor::CAP)))
+        {
+            switch (device->getColorIdx())
+            {
+            case Lpf2ColorIDX::BLACK:
+                BuitlInRGB_setColor(0, 0, 0);
+                break;
+            case Lpf2ColorIDX::BLUE:
+                BuitlInRGB_setColor(0, 0, 50);
+                break;
+            case Lpf2ColorIDX::GREEN:
+                BuitlInRGB_setColor(0, 50, 0);
+                break;
+            case Lpf2ColorIDX::RED:
+                BuitlInRGB_setColor(50, 0, 0);
+                break;
+            case Lpf2ColorIDX::WHITE:
+                BuitlInRGB_setColor(50, 50, 50);
+                break;
+            case Lpf2ColorIDX::YELLOW:
+                BuitlInRGB_setColor(50, 50, 0);
+                break;
+            case Lpf2ColorIDX::ORANGE:
+                BuitlInRGB_setColor(50, 20, 0);
+                break;
+            case Lpf2ColorIDX::PURPLE:
+                BuitlInRGB_setColor(30, 0, 30);
+                break;
+            case Lpf2ColorIDX::PINK:
+                BuitlInRGB_setColor(50, 0, 20);
+                break;
+            case Lpf2ColorIDX::LIGHTBLUE:
+                BuitlInRGB_setColor(0, 20, 50);
+                break;
+            case Lpf2ColorIDX::CYAN:
+                BuitlInRGB_setColor(0, 50, 50);
+                break;
+            
+            default:
+                BuitlInRGB_setColor(10, 10, 10);
+                break;
+            }
+        }
+        else
+        {
+            BuitlInRGB_setColor(0, 10, 0);
+        }
     }
-
-    // if (portB.device())
-    // {
-    //     if (auto device = static_cast<TechnicDistanceSensorControl*>(
-    //         portB.device()->getCapability(TechnicDistanceSensor::CAP)))
-    //     {
-    //         float value = device->getDistance();
-
-    //         if (value > 25.0f)
-    //             value = 25.0f;
-
-    //         value = 25.0f - value;
-
-    //         if (value > 25.0f)
-    //             value = 0.0f;
-
-    //         value = map(value, 0.0f, 25.0f, 0, 100);
-    //         if (value > 100)
-    //             value = 100;
-    //         else if (value < 0)
-    //             value = 0;
-
-    //         device->setLight(value, value, value, value);
-    //         hasSensor = true;
-    //         sensorReading = static_cast<int>(value);
-    //     }
-    //     else if (auto device = static_cast<BasicMotorControl*>(
-    //         portB.device()->getCapability(BasicMotor::CAP)))
-    //     {
-    //         if (!useSensorReading)
-    //             device->setSpeed(50);
-    //         else
-    //             device->setSpeed(sensorReading);
-    //     }
-    // }
+    else
+    {
+        // if (portA.getDeviceType() != Lpf2DeviceType::UNKNOWNDEVICE)
+        // {
+        //     printModes(portA.getPort());
+        // }
+        BuitlInRGB_setColor(0, 10, 0);
+    }
 
     useSensorReading = hasSensor;
 }
@@ -146,7 +165,7 @@ void printModes(const Lpf2Port &port)
     {
         printf("\t0x%04X", port.getModeCombo(i));
     }
-    for (int i = 0; i < port.getModeCount(); i++)
+    for (int i = 0; i < port.getModes().size(); i++)
     {
         auto &mode = port.getModes()[i];
 
@@ -174,7 +193,7 @@ void printModes(const Lpf2Port &port)
         printf("\tFlags: 0x%012llX (speed: %i, apos: %i, power: %i, motor: %i, pin1: %i, pin2: %i, calib: %i, power12: %i)\n",
                val, flags.speed(), flags.apos(), flags.power(), flags.motor(), flags.pin1(), flags.pin2(), flags.calib(), flags.power12());
         printf("\tRaw:");
-        for (int n = 0; n < 128; n++)
+        for (int n = 0; n < mode.rawData.size(); n++)
         {
             printf(" 0x%02X", mode.rawData[n]);
         }
