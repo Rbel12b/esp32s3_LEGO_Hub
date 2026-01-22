@@ -29,6 +29,28 @@ float map(float x, float in_min, float in_max, float out_min, float out_max)
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+unsigned long startTime = 0;
+
+int panValue()
+{
+    const unsigned long halfPeriod = 3000; // 3 seconds
+    const unsigned long fullPeriod = 6000; // 6 seconds
+
+    unsigned long now = millis();
+    unsigned long t = (now - startTime) % fullPeriod;
+
+    if (t < halfPeriod)
+    {
+        // 0 -> 180
+        return map(t, 0l, halfPeriod, 0l, 180l);
+    }
+    else
+    {
+        // 180 -> 0
+        return map(t - halfPeriod, 0l, halfPeriod, 180l, 0l);
+    }
+}
+
 void setup()
 {
     heap_caps_check_integrity_all(true);
@@ -46,6 +68,8 @@ void setup()
         PORT_B_PWM_1, PORT_B_PWM_2, PORT_B_PWM_UNIT, PORT_B_PWM_TIMER, 1000);
     portA.init();
     portB.init();
+
+    startTime = millis();
 }
 
 Lpf2DeviceType lastType = Lpf2DeviceType::UNKNOWNDEVICE;
@@ -100,7 +124,12 @@ void loop()
             portA.device()->getCapability(EncoderMotor::CAP)))
         {
             BuitlInRGB_setColor(50, 0, 50); // set color to indicate that a smart motor is connected
-            device->moveToAbsPos(180, 50);
+            static int lastPan = -1;
+            if (lastPan != panValue())
+            {
+                lastPan = panValue();
+                device->moveToAbsPos(panValue(), 100);
+            }
         }
         else if (auto device = static_cast<TechnicColorSensorControl*>(
             portA.device()->getCapability(TechnicColorSensor::CAP)))
