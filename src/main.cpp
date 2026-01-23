@@ -61,11 +61,11 @@ void setup()
     BuitlInRGB_setColor(0, 10, 0);
 
     portA_IO.init(PORT_A_ID_1, PORT_A_ID_2,
-        PORT_A_ID_1, PORT_A_ID_2,
-        PORT_A_PWM_1, PORT_A_PWM_2, PORT_A_PWM_UNIT, PORT_A_PWM_TIMER, 1000);
+                  PORT_A_ID_1, PORT_A_ID_2,
+                  PORT_A_PWM_1, PORT_A_PWM_2, PORT_A_PWM_UNIT, PORT_A_PWM_TIMER, 1000);
     portB_IO.init(PORT_B_ID_1, PORT_B_ID_2,
-        PORT_B_ID_1, PORT_B_ID_2,
-        PORT_B_PWM_1, PORT_B_PWM_2, PORT_B_PWM_UNIT, PORT_B_PWM_TIMER, 1000);
+                  PORT_B_ID_1, PORT_B_ID_2,
+                  PORT_B_PWM_1, PORT_B_PWM_2, PORT_B_PWM_UNIT, PORT_B_PWM_TIMER, 1000);
     portA.init();
     portB.init();
 
@@ -84,11 +84,11 @@ void loop()
     // portB.update();
 
     bool hasSensor = false;
-        
+
     if (portA.device())
     {
-        if (auto device = static_cast<TechnicDistanceSensorControl*>(
-            portA.device()->getCapability(TechnicDistanceSensor::CAP)))
+        if (auto device = static_cast<TechnicDistanceSensorControl *>(
+                portA.device()->getCapability(TechnicDistanceSensor::CAP)))
         {
             BuitlInRGB_setColor(0, 10, 50); // set color to indicate that a distance sensor is connected
             float value = device->getDistance();
@@ -111,8 +111,8 @@ void loop()
             hasSensor = true;
             sensorReading = static_cast<int>(value);
         }
-        else if (auto device = static_cast<BasicMotorControl*>(
-            portA.device()->getCapability(BasicMotor::CAP)))
+        else if (auto device = static_cast<BasicMotorControl *>(
+                     portA.device()->getCapability(BasicMotor::CAP)))
         {
             BuitlInRGB_setColor(50, 10, 0); // set color to indicate that a motor is connected
             if (!useSensorReading)
@@ -120,19 +120,32 @@ void loop()
             else
                 device->setSpeed(sensorReading);
         }
-        else if (auto device = static_cast<EncoderMotorControl*>(
-            portA.device()->getCapability(EncoderMotor::CAP)))
+        else if (auto device = static_cast<EncoderMotorControl *>(
+                     portA.device()->getCapability(EncoderMotor::CAP)))
         {
             BuitlInRGB_setColor(50, 0, 50); // set color to indicate that a smart motor is connected
-            static int lastPan = -1;
-            if (lastPan != panValue())
+            static bool started = false;
+
+            uint16_t pan = panValue();
+
+            if (!started)
             {
-                lastPan = panValue();
-                device->moveToAbsPos(panValue(), 100);
+                device->moveToAbsPos(180, 100); // start PID once
+                started = true;
+                // device->setRelPos(0);
+                // device->moveToRelPos(-720, 100);
+            }
+            else
+            {
+                device->setAbsTarget(pan); // smoothly track
+                if (!device->isMovingToPos())
+                {
+                    device->setSpeed(0);
+                }
             }
         }
-        else if (auto device = static_cast<TechnicColorSensorControl*>(
-            portA.device()->getCapability(TechnicColorSensor::CAP)))
+        else if (auto device = static_cast<TechnicColorSensorControl *>(
+                     portA.device()->getCapability(TechnicColorSensor::CAP)))
         {
             switch (device->getColorIdx())
             {
@@ -169,7 +182,7 @@ void loop()
             case Lpf2ColorIDX::CYAN:
                 BuitlInRGB_setColor(0, 50, 50);
                 break;
-            
+
             default:
                 BuitlInRGB_setColor(10, 10, 10);
                 break;
