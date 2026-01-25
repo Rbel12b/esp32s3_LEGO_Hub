@@ -7,6 +7,7 @@
 
 #include <Arduino.h>
 #include <HardwareSerial.h>
+#include <SoftwareSerial.h>
 
 class Esp32s3Uart;
 class Esp32s3MotorPWM;
@@ -18,8 +19,22 @@ class Esp32s3Uart : public Lpf2Uart
 {
 public:
     explicit Esp32s3Uart(int uart_num)
-        : serial_(uart_num)
     {
+        if (uart_num >= 0 && uart_num <= 2)
+        {
+            m_serial = new HardwareSerial(uart_num);
+        }
+        else
+        {
+            m_serial = new SoftwareSerial();
+        }
+        m_serialNum = uart_num;
+    }
+
+    ~Esp32s3Uart()
+    {
+        delete m_serial;
+        m_serial = nullptr;
     }
 
     bool begin(uint32_t baudrate,
@@ -53,34 +68,58 @@ public:
 
     void end() override
     {
-        serial_.end();
+        _end();
         uartPinsOff();
     }
 
     void setBaudrate(uint32_t baudrate) override
     {
         baud_ = baudrate;
-        serial_.updateBaudRate(baudrate);
+        if (m_serialNum >= 0 && m_serialNum <= 2)
+        {
+            auto serial = getHw();
+            if (serial)
+            {
+                serial->updateBaudRate(baud_);
+            }
+        }
+        else
+        {
+            auto serial = getSw();
+            if (serial)
+            {
+                serial->begin(baud_, (SoftwareSerialConfig)config_, rx_pin_, tx_pin_);
+            }
+        }
     }
 
     size_t write(const uint8_t *data, size_t length) override
     {
-        return serial_.write(data, length);
+        if (!m_uartOn)
+            return 0;
+        return m_serial->write(data, length);
     }
 
     int read() override
     {
-        return serial_.read();
+        if (!m_uartOn)
+            return -1;
+        return m_serial->read();
     }
 
     int available() override
     {
-        return serial_.available();
+        if (!m_uartOn)
+            return 0;
+        LPF2_LOG_D("Available bytes in UART%d: %d", m_serialNum, m_serial->available());
+        return m_serial->available();
     }
 
     void flush() override
     {
-        serial_.flush();
+        if (!m_uartOn)
+            return;
+        m_serial->flush();
     }
 
     void setUartPinsState(bool highZ) override
@@ -89,25 +128,56 @@ public:
 
         if (highZ)
         {
-            // Detach UART pins → high impedance
-            serial_.end();
+            if (m_serialNum > 2 || m_serialNum < 0)
+            {
+                auto sw = getSw();
+                if (sw)
+                {
+                    sw->flush();
+                    sw->end();
+                }
+            }
+            else
+            {
+                auto hw = getHw();
+                if (hw)
+                    hw->end();
+            }
+
+            // Set pins to high impedance
             if (rx_pin_ >= 0)
                 pinMode(rx_pin_, INPUT);
             if (tx_pin_ >= 0)
                 pinMode(tx_pin_, INPUT);
+
+            m_uartOn = false;
         }
         else
         {
-            // Reattach UART pins
-            if (rx_pin_ >= 0 || tx_pin_ >= 0)
+            // Reattach pins
+            if (rx_pin_ >= 0)
+                pinMode(rx_pin_, INPUT);
+            if (tx_pin_ >= 0)
+                pinMode(tx_pin_, INPUT);
+
+            if (m_serialNum > 2 || m_serialNum < 0)
             {
-                if (rx_pin_ >= 0)
-                    pinMode(rx_pin_, INPUT);
-                if (tx_pin_ >= 0)
-                    pinMode(tx_pin_, INPUT);
-                serial_.end();
-                serial_.begin(baud_, config_, rx_pin_, tx_pin_);
+                auto sw = getSw();
+                if (sw)
+                {
+                    LPF2_LOG_D("Re-initializing SoftwareSerial on pins RX=%d, TX=%d", rx_pin_, tx_pin_);
+                    sw->begin(baud_, (SoftwareSerialConfig)config_, rx_pin_, tx_pin_);
+                }
             }
+            else
+            {
+                auto hw = getHw();
+                if (hw)
+                {
+                    hw->begin(baud_, config_, rx_pin_, tx_pin_);
+                }
+            }
+            m_uartOn = true;
         }
     }
 
@@ -136,7 +206,44 @@ public:
     }
 
 private:
-    HardwareSerial serial_;
+    HardwareSerial *getHw()
+    {
+        if (m_serialNum < 0 || m_serialNum > 2)
+            return nullptr;
+        return (HardwareSerial *)m_serial;
+    }
+
+    SoftwareSerial *getSw()
+    {
+        if (m_serialNum < 0 || m_serialNum > 2)
+            return (SoftwareSerial *)m_serial;
+        LPF2_LOG_E("getSw called for hardware serial %d", m_serialNum);
+        return nullptr;
+    }
+
+    void _end()
+    {
+        if (m_serialNum >= 0 && m_serialNum <= 2)
+        {
+            auto serial = getHw();
+            if (serial)
+            {
+                serial->end();
+            }
+        }
+        else
+        {
+            auto serial = getSw();
+            if (serial)
+            {
+                serial->end();
+            }
+        }
+        m_uartOn = false;
+    }
+
+    Stream *m_serial;
+    int m_serialNum;
 
     int rx_pin_ = -1;
     int tx_pin_ = -1;
@@ -145,6 +252,10 @@ private:
 
     uint32_t baud_ = 115200;
     uint32_t config_ = SERIAL_8N1;
+
+    bool m_uartOn = false;
+
+    // xQueueHandle m_mutex;
 };
 
 #include "driver/mcpwm.h"
