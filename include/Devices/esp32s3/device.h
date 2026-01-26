@@ -75,6 +75,7 @@ public:
     void setBaudrate(uint32_t baudrate) override
     {
         baud_ = baudrate;
+        LPF2_LOG_D("Setting baudrate to %u", baud_);
         if (m_serialNum >= 0 && m_serialNum <= 2)
         {
             auto serial = getHw();
@@ -89,6 +90,7 @@ public:
             if (serial)
             {
                 serial->begin(baud_, (SoftwareSerialConfig)config_, rx_pin_, tx_pin_);
+                LPF2_LOG_V("SoftwareSerial re-initialized with new baudrate %u", baud_);
             }
         }
     }
@@ -104,14 +106,15 @@ public:
     {
         if (!m_uartOn)
             return -1;
-        return m_serial->read();
+        int n = m_serial->read();
+        LPF2_LOG_V("Read byte: 0x%02X", n);
+        return n;
     }
 
     int available() override
     {
         if (!m_uartOn)
             return 0;
-        LPF2_LOG_D("Available bytes in UART%d: %d", m_serialNum, m_serial->available());
         return m_serial->available();
     }
 
@@ -154,11 +157,6 @@ public:
         }
         else
         {
-            // Reattach pins
-            if (rx_pin_ >= 0)
-                pinMode(rx_pin_, INPUT);
-            if (tx_pin_ >= 0)
-                pinMode(tx_pin_, INPUT);
 
             if (m_serialNum > 2 || m_serialNum < 0)
             {
@@ -171,6 +169,10 @@ public:
             }
             else
             {
+                if (rx_pin_ >= 0)
+                    pinMode(rx_pin_, INPUT);
+                if (tx_pin_ >= 0)
+                    pinMode(tx_pin_, INPUT);
                 auto hw = getHw();
                 if (hw)
                 {
