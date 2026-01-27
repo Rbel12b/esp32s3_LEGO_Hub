@@ -8,7 +8,7 @@
 #define HUB_LED_RGB_PIN_B 42 // green pin
 
 // Port pwm pins
-#define PORT_A_PWM_1 11
+#define PORT_A_PWM_1 21
 #define PORT_A_PWM_2 10
 
 #define PORT_B_PWM_1 4
@@ -30,7 +30,7 @@
 #define PORT_C_ID_1 13
 #define PORT_C_ID_2 12
 
-#define PORT_D_ID_1 21
+#define PORT_D_ID_1 11
 #define PORT_D_ID_2 14
 
 // ledc channels for the onboard rgb led
@@ -48,7 +48,7 @@
 #define PORT_B_PWM_TIMER mcpwm_timer_t(1)
 
 #define PORT_C_PWM_UNIT mcpwm_unit_t(0)
-#define PORT_C_PWM_TIMER mcpwm_timer_t(3)
+#define PORT_C_PWM_TIMER mcpwm_timer_t(2)
 
 #define PORT_D_PWM_UNIT mcpwm_unit_t(1)
 #define PORT_D_PWM_TIMER mcpwm_timer_t(0)
