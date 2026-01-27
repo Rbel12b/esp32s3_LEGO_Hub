@@ -48,7 +48,7 @@
 #define PORT_B_PWM_TIMER mcpwm_timer_t(1)
 
 #define PORT_C_PWM_UNIT mcpwm_unit_t(0)
-#define PORT_C_PWM_TIMER mcpwm_timer_t(3)
+#define PORT_C_PWM_TIMER mcpwm_timer_t(2)
 
 #define PORT_D_PWM_UNIT mcpwm_unit_t(1)
 #define PORT_D_PWM_TIMER mcpwm_timer_t(0)
