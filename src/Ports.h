@@ -17,12 +17,6 @@ extern Lpf2PortLocal portB;
 extern Lpf2PortLocal portC;
 extern Lpf2PortLocal portD;
 
-// extern Lpf2DeviceManager portA_Manager;
-// extern Lpf2DeviceManager portB_Manager;
-// extern Lpf2DeviceManager portC_Manager;
-// extern Lpf2DeviceManager portD_Manager;
-
-
 void initPorts();
 void updatePorts();
 
