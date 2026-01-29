@@ -43,7 +43,7 @@ void updatePorts()
 
 void writePortCallback(byte port, byte value)
 {
-    if (port == (byte)ControlPlusHubPort::A && portA.device())
+    if (port == (byte)Lpf2ControlPlusHubPort::A && portA.device())
     {
         if (auto device = static_cast<BasicMotorControl *>(
                   portA.device()->getCapability(BasicMotor::CAP)))
