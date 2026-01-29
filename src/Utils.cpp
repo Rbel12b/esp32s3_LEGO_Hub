@@ -46,13 +46,14 @@ void printModes(const Lpf2Port &port)
         printf("\tunit: %s\n", mode.unit.c_str());
         printf("\tmin: %f\n", (double)mode.min);
         printf("\tmax: %f\n", (double)mode.max);
+        printf("\tPCT min: %s\n", mode.PCTmin);
+        printf("\tPCT max: %s\n", mode.PCTmax);
         printf("\tSI min: %f\n", (double)mode.SImin);
         printf("\tSI max: %f\n", (double)mode.SImax);
         printf("\tData sets: %i\n", mode.data_sets);
         printf("\tformat: 0x%02X\n", mode.format);
         printf("\tFigures: %i\n", mode.figures);
         printf("\tDecimals: %i\n", mode.decimals);
-        printf("\tnegative percentage: %s\n", mode.negativePCT ? "true" : "false");
         auto in = mode.in;
         printf("\tin: 0x%02X (null: %i, mapping 2.0: %i, m_abs: %i, m_rel: %i, m_dis: %i)\n",
                in.val, in.nullSupport(), in.mapping2(), in.m_abs(), in.m_rel(), in.m_dis());
