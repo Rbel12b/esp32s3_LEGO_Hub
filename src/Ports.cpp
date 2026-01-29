@@ -16,10 +16,10 @@ Lpf2PortLocal portB(&portB_IO);
 Lpf2PortLocal portC(&portC_IO);
 Lpf2PortLocal portD(&portD_IO);
 
-Lpf2DeviceManager portA_Manager(portA);
-Lpf2DeviceManager portB_Manager(portB);
-Lpf2DeviceManager portC_Manager(portC);
-Lpf2DeviceManager portD_Manager(portD);
+// Lpf2DeviceManager portA_Manager(portA);
+// Lpf2DeviceManager portB_Manager(portB);
+// Lpf2DeviceManager portC_Manager(portC);
+// Lpf2DeviceManager portD_Manager(portD);
 
 #define initIOForPort(_port)                                        \
     port##_port##_IO.init(PORT_##_port##_ID_1, PORT_##_port##_ID_2, \
@@ -29,38 +29,30 @@ void initPorts()
 {
     initIOForPort(A);
     initIOForPort(B);
-    // initIOForPort(C);
+    initIOForPort(C);
     initIOForPort(D);
 
     portA.init();
     portB.init();
-    // portC.init();
+    portC.init();
     portD.init();
 
-    portA_Manager.init();
-    portA_Manager.init();
     // portA_Manager.init();
-    portA_Manager.init();
+    // portA_Manager.init();
+    // portA_Manager.init();
+    // portA_Manager.init();
 }
 
 void updatePorts()
 {
-    portA_Manager.update();
-    portA_Manager.update();
     // portA_Manager.update();
-    portA_Manager.update();
-}
-
-void writePortCallback(byte port, byte value)
-{
-    if (port == (byte)Lpf2ControlPlusHubPort::A && portA_Manager.device())
-    {
-        if (auto device = static_cast<BasicMotorControl *>(
-                  portA_Manager.device()->getCapability(BasicMotor::CAP)))
-        {
-            device->setSpeed(value);
-        }
-    }
+    // portA_Manager.update();
+    // portA_Manager.update();
+    // portA_Manager.update();
+    portA.update();
+    portB.update();
+    portC.update();
+    portD.update();
 }
 
 // Lpf2DeviceType lastType = Lpf2DeviceType::UNKNOWNDEVICE;
