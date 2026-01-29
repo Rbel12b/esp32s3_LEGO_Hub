@@ -11,10 +11,15 @@ Esp32s3IO portB_IO(PORT_B_HWS);
 Esp32s3IO portC_IO(PORT_C_HWS);
 Esp32s3IO portD_IO(PORT_D_HWS);
 
-Lpf2DeviceManager portA(&portA_IO);
-Lpf2DeviceManager portB(&portB_IO);
-Lpf2DeviceManager portC(&portC_IO);
-Lpf2DeviceManager portD(&portD_IO);
+Lpf2PortLocal portA(&portA_IO);
+Lpf2PortLocal portB(&portB_IO);
+Lpf2PortLocal portC(&portC_IO);
+Lpf2PortLocal portD(&portD_IO);
+
+Lpf2DeviceManager portA_Manager(portA);
+Lpf2DeviceManager portB_Manager(portB);
+Lpf2DeviceManager portC_Manager(portC);
+Lpf2DeviceManager portD_Manager(portD);
 
 #define initIOForPort(_port)                                        \
     port##_port##_IO.init(PORT_##_port##_ID_1, PORT_##_port##_ID_2, \
@@ -31,22 +36,27 @@ void initPorts()
     portB.init();
     // portC.init();
     portD.init();
+
+    portA_Manager.init();
+    portA_Manager.init();
+    // portA_Manager.init();
+    portA_Manager.init();
 }
 
 void updatePorts()
 {
-    portA.update();
-    portB.update();
-    // portC.update();
-    portD.update();
+    portA_Manager.update();
+    portA_Manager.update();
+    // portA_Manager.update();
+    portA_Manager.update();
 }
 
 void writePortCallback(byte port, byte value)
 {
-    if (port == (byte)Lpf2ControlPlusHubPort::A && portA.device())
+    if (port == (byte)Lpf2ControlPlusHubPort::A && portA_Manager.device())
     {
         if (auto device = static_cast<BasicMotorControl *>(
-                  portA.device()->getCapability(BasicMotor::CAP)))
+                  portA_Manager.device()->getCapability(BasicMotor::CAP)))
         {
             device->setSpeed(value);
         }
