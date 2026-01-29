@@ -5,7 +5,7 @@
 #include "Lpf2DeviceManager.h"
 #include "Devices/esp32s3/device.h"
 #include "Lpf2HubEmulation.h"
-#include "Lpf2PortLocal.h"
+#include "Lpf2Local/Lpf2PortLocal.h"
 
 extern Esp32s3IO portA_IO;
 extern Esp32s3IO portB_IO;
