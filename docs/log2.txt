@@ -1,0 +1,367 @@
+D NimBLEScan: >> start: duration=10
+D NimBLEScan: Scan started
+D NimBLEScan: << start()
+D NimBLEScan: discovery complete; reason=0
+D NimBLEScan: >> start: duration=10
+D NimBLEScan: Scan started
+D NimBLEScan: << start()
+I NimBLEScan: New advertiser: 32:13:8b:37:8a:58
+D NimBLEScanCallbacks: Discovered: Name: , Address: 32:13:8b:37:8a:58
+Service Data:
+UUID: 0xfdf7, Data: ��9^_���mޯo!
+I NimBLEScan: Scan response from: 32:13:8b:37:8a:58
+D][Lpf2Hub.cpp:79] onResult(): advertised device: Name: , Address: 32:13:8b:37:8a:58, manufacturer data: 650001c905, serviceUUID: 0xfe78
+Service Data:
+UUID: 0xfdf7, Data: ��9^_���mޯo!
+D NimBLEScan: discovery complete; reason=0
+[  3386][D][Lpf2Hub.cpp:69] onScanEnd(): Scan Ended reason: 0
+Number of devices: 1
+[  3397][D][Lpf2Hub.cpp:72] onScanEnd(): device[0]: Name: , Address: 32:13:8b:37:8a:58, manufacturer data: 650001c905, serviceUUID: 0xfe78
+Service Data:
+UUID: 0xfdf7, Data: ��9^_���mޯo!
+D NimBLEScan: >> start: duration=10
+D NimBLEScan: Scan started
+D NimBLEScan: << start()
+D NimBLEScan: discovery complete; reason=0
+[  3851][D][Lpf2Hub.cpp:69] onScanEnd(): Scan Ended reason: 0
+Number of devices: 0
+D NimBLEScan: >> start: duration=10
+D NimBLEScan: Scan started
+D NimBLEScan: << start()
+I NimBLEScan: New advertiser: 90:84:2b:63:f3:51
+D NimBLEScanCallbacks: Discovered: Name: , Address: 90:84:2b:63:f3:51, manufacturer data: 9703008006004100, serviceUUID: 00001623-1212-efde-1623-785feabcd123
+I NimBLEScan: Scan response from: 90:84:2b:63:f3:51
+[  4362][D][Lpf2Hub.cpp:79] onResult(): advertised device: Name: Technic Hub 1, Address: 90:84:2b:63:f3:51, manufacturer data: 9703008006004100, serviceUUID: 00001623-1212-efde-1623-785feabcd123, txPower: 0
+D NimBLEScan: >> stop()
+D NimBLEScan: << stop()
+[  4392][D][Lpf2Hub.cpp:93] onResult(): manufacturer data hub type: 80
+[  4843][D][Lpf2Hub.cpp:1106] connectHub(): number of ble clients: 0
+D NimBLEClient: >> connect(90:84:2b:63:f3:51)
+D NimBLEClient: >> handleGapEvent 
+D NimBLEClient: >> handleGapEvent 
+D NimBLEClient: >> handleGapEvent 
+I NimBLEClient: mtu update: mtu=158
+D NimBLEClientCallbacks: onMTUChange: default
+D NimBLEClient: << handleGapEvent
+D NimBLEClientCallbacks: onConnect: default
+D NimBLEClient: exchangeMTUCb: status=0, mtu=158
+D NimBLEClient: << connect()
+[  5188][D][Lpf2Hub.cpp:1155] connectHub(): connected to: 90:84:2b:63:f3:51, RSSI: -32
+D NimBLEClient: >> getService: uuid: 00001623-1212-efde-1623-785feabcd123
+D NimBLEClient: Service Discovered >> status: 0 handle: 12
+D NimBLEClient: Service Discovered >> status: 14 handle: -1
+D NimBLEClient: << Service Discovered
+D NimBLERemoteService: >> getCharacteristic: uuid: 00001624-1212-efde-1623-785feabcd123
+D NimBLERemoteService: >> retrieveCharacteristics()
+D NimBLERemoteService: Characteristic Discovery >> status: 0 handle: 13
+D NimBLERemoteService: Characteristic Discovery >> status: 14 handle: -1
+D NimBLERemoteService: << Characteristic Discovery
+D NimBLERemoteService: << retrieveCharacteristics()
+D NimBLERemoteService: << Characteristic found
+D NimBLERemoteCharacteristic: >> setNotify()
+D NimBLERemoteCharacteristic: >> getDescriptor: uuid: 0x2902
+D NimBLERemoteCharacteristic: >> retrieveDescriptors() for characteristic: 00001624-1212-efde-1623-785feabcd123
+D NimBLERemoteCharacteristic: Descriptor Discovery >> status: 0 handle: 15
+D NimBLERemoteCharacteristic: << Descriptor Discovery
+D NimBLERemoteCharacteristic: << retrieveDescriptors(): found 1 descriptors.
+D NimBLERemoteCharacteristic: << getDescriptor: found
+D NimBLERemoteCharacteristic: << setNotify()
+D NimBLERemoteValueAttribute: >> writeValue()
+I NimBLERemoteValueAttribute: Write complete; status=0
+D NimBLERemoteValueAttribute: << writeValue
+D NimCoBnnecteLd to HEUB
+HuCb addrless: 9i0:84:2eb:63:fn3:51
+t: >>ni c Hub h1
+andleGapEvent 
+[  5776][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 0
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  5811][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+[  583[2 ] [5W8]3[2L]p[fD2]H[uLbp.fc2pHpu:b9.4c4p]p :g3e1t0P]o rptFaorrsDeePvoircteMTeyspsea(g)e:( )n:o  ppoorrtt  3f2o uinsd  cwonintehc tdeedv iwcei thty dpeev i17ce
+ 17
+[  5846][D][DL pNf2iHmubB.LcEppR:e14m8o]t reeVgiasltuerePAortttDribute: >> writeValue()
+evice(): port: 32, device type: 17
+D NimBLERemoteValueAttribute: << writeValue
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+[  5859][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 0
+[  5876][W][Lpf2Hub.cpp:944] getPortForDeviceType(): no port fouD NimBLEClient: >> handleGapEvent 
+nd with device type 17
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  5904][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+D NimBLERemoteValueAttr[i b 5u9t2e5]:[ D]>[>L pfw2rHuibt.ecpVpa:lue()
+310] parsePortMessage(): port 3b is connected with device 15
+D NimBLERemoteValueAttribute: << writeValue
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+[  5938][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 1
+   5956][D][Lpf2Hub.cpp:1[4 8 ]5 9r5e6g]i[sVt]e[rLPpofr2tHDuebv.ccpep(:)9:3 7p]o rgte:t P3obr,t FdoervDiecvei cteyTpyep:e (1)5:
+device 0, port number: 32, device type: 17, callback address: 0
+[  5973][D][Lpf2Hub.cpp:940] getPortForDeviceType(): port 32 hasD NimBLEClient: >> handleGapEvent 
+ device of type 17
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  6000][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+D NimBLERemoteValueAtt[ r i60b2u1t][eD:][ L>pf>2 Hwubr.icptpe:3Value()
+10] parsePortMessage(): port 3c is connected with device 14
+D NimBLERemoteValueAttribute: << writeValue
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+[  6035][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 2
+[  6052][D][[ L p6f025H2u]b[.Vc]p[pL:p1f428H]u br.ecgpips:t9e3r7P]o rgteDtePvoircteF(o)r:D epvoircte:T y3pce,( )d:e vdiecvei ctey p0e,:  p1o4rt
+number: 32, device type: 17, callback address: 0
+[  6069][D][Lpf2Hub.cpp:940] getPortForDeviceType(): port 32 hasD NimBLEClient: >> h daenvdiclee oGfa tpyEpve e1n7t
+ 
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  6096][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+D NimBLERemoteValueAttrib[ u t61e1:7] [>D>][ Lwpfr2iHtube.Vcpaplue()
+:310] parsePortMessage(): port 3d is connected with device 3c
+D NimBLERemoteValueAttribute: << writeValue
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+[  6131][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 3
+[  6148][D][L[p f 26H1u4b8.]c[pVp]:[1L4p8f]2 Hruebg.icsptpe:r9P3o7r]t DgeevtiPcoer(t)F:o rpDoervti:c e3Tdy,p ed(e)v:i cdee vtiycpee :0 ,3 cp
+rt number: 32, device type: 17, callback address: 0
+[  6165][D][Lpf2Hub.cpp:940] getPortForDeviceType(): port 32 hasD NimBLEClient: >> handleGapEvent 
+ device of type 17
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  6192][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+D NimBLERemoteValueAttribu[t e 6:2 1>4]>[ D]w[rLipft2eHuVba.lcpue()
+D NimBLERemoteValueAttribute: << writeValue
+p:310] parsePortMessage(): port 60 is connected with device 3c
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+[  6227][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 4
+[  6244][D][Lp[f 2 H6u2b4.4c]p[pV:]1[4L8p]f 2rHeugbi.sctpepr:P9o3r7t]D egveitcPeo(r)t:F oproDretv:i c6e0T,y pdee(v)i:c ed etvyipce:e  30c, 
+ort number: 32, device type: 17, callback address: 0
+[  6261][D][Lpf2Hub.cpp:940] getPortForDeviceType(): port 32 hasD NimBLEClient: >> handleGapEvent 
+ device of type 17
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  6288][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+D Nim[B L 6E3R1e0]m[oD]t[eLVpfa2lHuube.Acptpt:3r1i0b] uptares:e >> writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+PortMessage(): port 61 is connected with device 39
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+[  6323][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 5
+[  6341][D][Lp[f 2 H6u3b4.1c]p[pV:]1[4L8p]f 2rHeugbi.sctpepr:P9o3rt7D]e vgiecteP(o)r:t FpoorrDte:v i6c1e,T ydpeev(i)c:e  dteyvpice 0, ep:o r3t9 n
+mber: 32, device type: 17, callback address: 0
+[  6357][D][Lpf2Hub.cpp:940] getPortForDeviceType(): port 32 hasD NimBLEClient: >> handleGapEvent 
+ device of type 17
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+Failed to allocate buffer, retrying
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid:Failed to allocate buffer, retrying
+ 0x2902, handle: 15
+[  6391][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcdFailed to allocate buffer, retrying
+123
+Failed to allocate buffer, retrying
+D NimBLERe[m o 6t4e19V]a[Dl]u[eLpAft2Hturbi.cbpup:t3e10:]  >pa>r writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+sePortMessage(): port 62 is connected with deFailed to allocate buffer, retrying
+vice 3a
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+o  6435][D][Lpf2Hub.cpp:934F]ai lgeedt Ptorot FalorlDoceavtice ebTuyffpee(r), :r Neturmybierng 
+f connected devices: 6
+Failed to allocate buffer, retrying
+[  6456][D][Lp[f 2 H6u4b5.6c]p[pV:]1[4L8p]f 2rHeugbi.sctpepr:P9o3r7t]D egveitcPeo(r)t:F oproDretv:i c6e2T,y pdee(v)i:c ed etvyipcee:  03,a 
+port number: 32, device typeFa:i 1le7d,  tcoa llalblacock ataedd brufefsse:r , 0r
+trying
+Failed to allocate buffer, retrying
+[  6477][D][Lpf2Hub.cpp:940] getPortForDeviceType(): port 32 hasD NimBLEClient: >> handleGapEvent 
+ device of type 17
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  6504][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+D NimBLERemoteValueAttribute: >[>   6w5r26i]t[eD]V[aLplfu2eHu(b)
+.cpp:310] parsePortMessage(): port 63 is connected with device 3b
+D NimBLERemoteValueAttribute: << writeValue
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+[  6539][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 7
+[  6556][D][  6[5L5p6f]2[HVu]b[.Lcppfp2:H1u4b8.]c prpe:g9i3s7t]e rgPeotrPtoDretvFiocreD(e)v:i cpeoTrytp:e (6)3:,  ddeevviiccee  t0y,p ep:o r3bt 
+umber: 32, device type: 17, callback address: 0
+ce 6573][D][Lpf2Hub.cpp:940] getPortForDeviceType(): port 32 hasD NimBLEClient: >> handleGapEve ndetv i
+ of type 17
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  6600][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+D NimBLERemoteValueAttrib[u  t6e62:1 ][>D>] [Lwprf2iHtube.Vcapplue()
+:310] parsePortMessage(): port 64 is connected with device 36
+D NimBLERemoteValueAttribute: << writeValue
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+[  6635][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 8
+[  6652][D][Lp[f 2 H6u6b5.2c]p[pV:]1[4L8p]f 2rHeugbi.sctpepr:P9o3r7t]D egveitcPeo(r)t:F oproDretv:i c6e4T,y pdee(v)i:c ed etvyipcee:  03,6 
+ort number: 32, device type: 17, callback address: 0
+[  6669][D][Lpf2Hub.cpp:940] getPortForDeviceType(): port 32 hasD NimBLEClient: >> handleGapEvent 
+ device of type 17
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  6696][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLEClient: >> handleGapEvent 
+D NimBLEClient: Notify Received for handle: 14
+E NimBLERemoteValueAttribute: << writeValue failed, rc: 6 
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  6751][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+E NimBLERemoteValueAttribute: << writeValue failed, rc: 6 
+[  6767][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 9
+[  6785][V][Lpf2Hub.cpp:937] getPortForDeviceType(): device 0, pD NimBLEClient: >> handleGapEvent 
+ort number: 32, device type: 17, callback address: 0
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  6815][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+[  6836][D][Lpf2Hub.cpp:940] getPortForDeviceType(): port 32 hasD NimBLEClient: >> handleGapEvent 
+ device of type 17
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  6863][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+D Nim[ B L68E8R5e][mDo][tLepVf2aHlubu.ecAppt:t76r5i]b puatrsee:P >> writeValue()
+ortAction(): parsePortAction
+E NimBLERemoteValueAttribute: << writeValue failed, rc: 6 
+D NimBLERemoteValueAttribute: >> writeValue()
+E NimBLERemoteValueAttribute: << writeValue failed, rc: 6 
+[  6899][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 9
+vi 6916][V][Lpf2Hub.cpp:937] getPortForDeviceType(): device 0, pD NimBLEClient: >> hanodrtl enuGmabperE:v 3e2n,t d e
+ce type: 17, callback address: 0
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  6946][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+[  6968][D][Lpf2Hub.cpp:940] getPortForDeviceType(): port 32 hasD NimBLEClient: >> handleGapEvent 
+ device of type 17
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  6995][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+t N[i m 7B0L16E]R[De]m[oLptfe2HVuab.lcupep:A7t65t]r piabrusetPeo: >> writeValue()r
+Action(): parsePortAction
+E NimBLERemoteValueAttribute: << writeValue failed, rc: 6 
+D NimBLERemoteValueAttribute: >> writeValue()
+E NimBLERemoteValueAttribute: << writeValue failed, rc: 6 
+[  7030][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 9
+2  7048][V][Lpf2Hub.cpp:937] getPortForDeviceType(): device 0, pD NimBLEClient: >> handleoGartp Enuvmebenrt:  3
+, device type: 17, callback address: 0
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  7078][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+[  7099][D][Lpf2Hub.cpp:940] getPortForDeviceType(): port 32 hasD NimBLEClient: >> handleGapEvent 
+ device of type 17
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  7126][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+D NimB[L E 7R1e48m]o[Dt]e[VLpafl2HuuebA.ctptp:r7i65b]u tpaer:se >> writeValue()
+PortAction(): parsePortAction
+E NimBLERemoteValueAttribute: << writeValue failed, rc: 6 
+D NimBLERemoteValueAttribute: >> writeValue()
+E NimBLERemoteValueAttribute: << writeValue failed, rc: 6 
+[  7162][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 9
+[  7179][V][Lpf2Hub.cpp:937] getPortForDeviceType(): device 0, pD NimBLEClient: >> handleGapEvent 
+ort number: 32, device type: 17, callback address: 0
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  7209][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+[  7231][D][Lpf2Hub.cpp:940] getPortForDeviceType(): port 32 hasD NimBLEClient: >> handleGapEvent 
+ device of type 17
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  7258][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+D Nim[ B L72E7R9]e[mDo][tLepfV2aHulbu.ecpApt:7t6r5]i bpuartseeP: >> writeValue()
+ortAction(): parsePortAction
+E NimBLERemoteValueAttribute: << writeValue failed, rc: 6 
+D NimBLERemoteValueAttribute: >> writeValue()
+E NimBLERemoteValueAttribute: << writeValue failed, rc: 6 
+[  7293][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 9
+[  7311][V][Lpf2Hub.cpp:937] getPortForDeviceType(): device 0, port number: 32, device type: 17, callback address: 0
+[  7321][D][Lpf2Hub.cpp:940] getPortForDeviceType(): port 32 has device of type 17
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+[  7335][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 9
+[  7352][V][Lpf2Hub.cpp:937] getPortForDeviceType(): device 0, port number: 32, device type: 17, callback address: 0
+[  7362][D][Lpf2Hub.cpp:940] getPortForDeviceType(): port 32 has device of type 17
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLERemoteValueAttribute: << writeValue
+[  7376][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 9
+D NimBLEClient: >> handleGapEvent 
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  7413][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+[  7434][V][Lpf2Hub.cpp:937] getPortForDeviceType(): device 0, pD NimBLECloiret nntu:mb e>r:>  3h2,a ndedvlieceG atyppEev: e1n7, 
+ callback address: 0
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  7464][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+   7486][D][[L p f724H8u6b].[cDp]p[:L7p6f52]H upba.rcspepP:o9r4tA]c tgieotnP(o)r:t FpoarrDseevPiocretTAycptei(o)n:
+port 32 has device of type 17
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLEClient: >> handleGapEvent 
+D NimBLERemoteValueAttribute: << writeValue
+D NimBLEClient: Notify Received for handle: 14
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLERemoteValueAttribute: << writeValue
+[  7519][D][Lpf2Hub.cpp:934] getPortForDeviceType(): Number of connected devices: 9
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  7542][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+[  7563][V][Lpf2Hub.cpp:937] getPortForDeviceType(): device 0, pD NimBLEClient: >> handleGapEvent 
+ort number: 32, device type: 17, callback address: 0
+D NimBLEClient: Notify Received for handle: 14
+D NimBLEClient: checking service 00001623-1212-efde-1623-785feabcd123 for handle: 14
+D NimBLEClient: Got Notification for characteristic Characteristic: uuid: 00001624-1212-efde-1623-785feabcd123, handle: 14 0x000e, props:  0x1e
+Descriptor: uuid: 0x2902, handle: 15
+[  7593][D][Lpf2Hub.cpp:781] notifyCallback(): notify callback for characteristic 00001624-1212-efde-1623-785feabcd123
+   7615][D][[L p f726H1u5b].[cDp]p[:L7p6f52]H upba.rcspepP:o9r4tA]c tgieotnP(o)r:t FpoarrDseevPiocretTAycptei(o)n:
+port 32 has device of type 17
+D NimBLERemoteValueAttribute: >> writeValue()
+D NimBLEClient: >> handleGapEvent 
