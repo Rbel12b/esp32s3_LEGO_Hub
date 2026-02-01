@@ -9,7 +9,8 @@
 #include "Lpf2HubEmulation.h"
 #include "Lpf2Hub.h"
 #include "Lpf2Virtual/Lpf2PortVirtual.h"
-#include "Lpf2Virtual/VirtualDevices/Hud_led.h"
+#include "Lpf2Virtual/Lpf2VirtualDevice.h"
+#include "Lpf2DeviceDescLib.h"
 
 extern "C" int serial_vprintf(const char *fmt, va_list args)
 {
@@ -33,7 +34,7 @@ extern "C" int serial_vprintf(const char *fmt, va_list args)
 Lpf2HubEmulation vHub("Technic Hub", Lpf2HubType::CONTROL_PLUS_HUB);
 
 Lpf2PortVirtual vPort;
-Lpf2VirtualHubLed hubLed;
+Lpf2VirtualGenericDevice hubLed(Lpf2DeviceDescriptors::LPF2_DEVICE_HUB_LED);
 
 Lpf2Hub realHub;
 
