@@ -30,10 +30,12 @@ extern "C" int serial_vprintf(const char *fmt, va_list args)
     return len;
 }
 
-Lpf2HubEmulation hub("Technic Hub", Lpf2HubType::CONTROL_PLUS_HUB);
+Lpf2HubEmulation vHub("Technic Hub", Lpf2HubType::CONTROL_PLUS_HUB);
 
 Lpf2PortVirtual vPort;
 Lpf2VirtualHubLed hubLed;
+
+Lpf2Hub realHub;
 
 void setup()
 {
@@ -52,12 +54,14 @@ void setup()
 
     util_panStartTime = millis();
 
-    hub.attachPort((Lpf2PortNum)Lpf2ControlPlusHubPort::LED, &vPort);
-    hub.attachPort((Lpf2PortNum)Lpf2ControlPlusHubPort::A, &portA);
+    vHub.attachPort((Lpf2PortNum)Lpf2ControlPlusHubPort::LED, &vPort);
+    vHub.attachPort((Lpf2PortNum)Lpf2ControlPlusHubPort::A, &portA);
 
-    hub.start();
-    hub.setHubBatteryLevel(50);
-    hub.setHubBatteryType(Lpf2BatteryType::NORMAL);
+    vHub.start();
+    vHub.setHubBatteryLevel(50);
+    vHub.setHubBatteryType(Lpf2BatteryType::NORMAL);
+
+    realHub.init();
 }
 
 auto portALastDeviceType = Lpf2DeviceType::UNKNOWNDEVICE;
@@ -68,11 +72,11 @@ void loop()
     vTaskDelay(1);
 
     updatePorts();
-    hub.update();
+    vHub.update();
 
-    if (hub.isSubscribed != isSubscribed)
+    if (vHub.isSubscribed != isSubscribed)
     {
-        isSubscribed = hub.isSubscribed;
+        isSubscribed = vHub.isSubscribed;
         if (isSubscribed)
         {
             vPort.attachDevice(&hubLed);
@@ -88,5 +92,37 @@ void loop()
     if (portA.getDeviceType() == Lpf2DeviceType::TECHNIC_LARGE_LINEAR_MOTOR)
     {
         ESP.restart();
+    }
+
+
+    if (!realHub.isConnected() && !realHub.isConnecting())
+    {
+        realHub.init();
+        vTaskDelay(500);
+    }
+
+    // connect flow. Search for BLE services and try to connect if the uuid of the hub is found
+    if (realHub.isConnecting())
+    {
+        realHub.connectHub();
+        if (realHub.isConnected())
+        {
+            Serial.println("Connected to HUB");
+        }
+        else
+        {
+            Serial.println("Failed to connect to HUB");
+        }
+    }
+
+    if (realHub.isConnected())
+    {
+        realHub.update();
+        static bool printedInfos = false;
+        if (!printedInfos && realHub.infoReady())
+        {
+            Serial.print(realHub.getAllInfoStr().c_str());
+            printedInfos = true;
+        }
     }
 }
