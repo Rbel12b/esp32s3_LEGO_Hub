@@ -4,7 +4,6 @@
 
 #include "Lpf2Port.h"
 
-void printModes(const Lpf2Port &port);
 float map(float x, float in_min, float in_max, float out_min, float out_max);
 
 extern unsigned long util_panStartTime;

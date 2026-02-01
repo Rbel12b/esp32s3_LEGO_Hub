@@ -94,7 +94,6 @@ void loop()
         ESP.restart();
     }
 
-
     if (!realHub.isConnected() && !realHub.isConnecting())
     {
         realHub.init();
@@ -121,7 +120,12 @@ void loop()
         static bool printedInfos = false;
         if (!printedInfos && realHub.infoReady())
         {
-            Serial.print(realHub.getAllInfoStr().c_str());
+            auto s = realHub.getAllInfoStr();
+            for (size_t i = 0; i < s.size(); i += 128)
+            {
+                Serial.write(s.data() + i, std::min<size_t>(128, s.size() - i));
+                delay(1); // let other tasks breathe
+            }
             printedInfos = true;
         }
     }
