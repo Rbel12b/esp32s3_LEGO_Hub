@@ -32,10 +32,6 @@ extern "C" int serial_vprintf(const char *fmt, va_list args)
 }
 
 Lpf2HubEmulation vHub("Technic Hub", Lpf2HubType::CONTROL_PLUS_HUB);
-
-Lpf2PortVirtual vPort;
-Lpf2VirtualGenericDevice hubLed(Lpf2DeviceDescriptors::LPF2_DEVICE_HUB_LED);
-
 Lpf2Hub realHub;
 
 void setup()
@@ -55,14 +51,14 @@ void setup()
 
     util_panStartTime = millis();
 
-    vHub.attachPort((Lpf2PortNum)Lpf2ControlPlusHubPort::LED, &vPort);
+#if EMULATE_HUB == 1
     vHub.attachPort((Lpf2PortNum)Lpf2ControlPlusHubPort::A, &portA);
-
     vHub.start();
     vHub.setHubBatteryLevel(50);
     vHub.setHubBatteryType(Lpf2BatteryType::NORMAL);
-
+#else
     realHub.init();
+#endif
 }
 
 auto portALastDeviceType = Lpf2DeviceType::UNKNOWNDEVICE;
@@ -73,6 +69,7 @@ void loop()
     vTaskDelay(1);
 
     updatePorts();
+#if EMULATE_HUB == 1
     vHub.update();
 
     if (vHub.isSubscribed != isSubscribed)
@@ -80,7 +77,6 @@ void loop()
         isSubscribed = vHub.isSubscribed;
         if (isSubscribed)
         {
-            vPort.attachDevice(&hubLed);
             BuitlInRGB_setColor(0, 10, 0);
         }
         else
@@ -94,7 +90,16 @@ void loop()
     {
         ESP.restart();
     }
-
+    else if (portA.deviceConnected())
+    {
+        auto s = portA.getInfoStr();
+        for (size_t i = 0; i < s.size(); i += 128)
+        {
+            Serial.write(s.data() + i, std::min<size_t>(128, s.size() - i));
+            delay(1); // let other tasks breathe
+        }
+    }
+#else
     if (!realHub.isConnected() && !realHub.isConnecting())
     {
         realHub.init();
@@ -130,4 +135,5 @@ void loop()
             printedInfos = true;
         }
     }
+#endif
 }
