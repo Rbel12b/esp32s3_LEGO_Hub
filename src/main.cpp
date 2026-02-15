@@ -6,12 +6,12 @@
 #include "Ports.h"
 #include "Utils.h"
 
-#include "Lpf2HubEmulation.hpp"
-#include "Lpf2Hub.hpp"
-#include "Lpf2Virtual/Lpf2PortVirtual.hpp"
-#include "Lpf2Virtual/Lpf2VirtualDevice.hpp"
-#include "Lpf2DeviceDescLib.hpp"
-#include "Lpf2Devices/ColorSensor.hpp"
+#include "Lpf2/HubEmulation.hpp"
+#include "Lpf2/Hub.hpp"
+#include "Lpf2/Virtual/Port.hpp"
+#include "Lpf2/Virtual/Device.hpp"
+#include "Lpf2/DeviceDescLib.hpp"
+#include "Lpf2/Devices/ColorSensor.hpp"
 
 extern "C" int serial_vprintf(const char *fmt, va_list args)
 {
@@ -32,8 +32,8 @@ extern "C" int serial_vprintf(const char *fmt, va_list args)
     return len;
 }
 
-Lpf2HubEmulation vHub("Technic Hub", Lpf2HubType::CONTROL_PLUS_HUB);
-Lpf2Hub hub;
+Lpf2::HubEmulation vHub("Technic Hub", Lpf2::HubType::CONTROL_PLUS_HUB);
+Lpf2::Hub hub;
 
 void setup()
 {
@@ -41,8 +41,8 @@ void setup()
     Serial.begin(981200);
     lpf2_log_printf("booted.");
 
-    Lpf2DeviceRegistry::registerDefault();
-    Lpf2DeviceDescRegistry::registerDefault();
+    Lpf2::DeviceRegistry::registerDefault();
+    Lpf2::DeviceDescRegistry::registerDefault();
 
     esp_log_set_vprintf(serial_vprintf);
 
@@ -54,16 +54,16 @@ void setup()
     util_panStartTime = millis();
 
 #if EMULATE_HUB == 1
-    vHub.attachPort((Lpf2PortNum)Lpf2ControlPlusHubPort::A, &portA);
+    vHub.attachPort((Lpf2PortNum)Lpf2::ControlPlusHubPort::A, &portA);
     vHub.start();
     vHub.setHubBatteryLevel(50);
-    vHub.setHubBatteryType(Lpf2BatteryType::NORMAL);
+    vHub.setHubBatteryType(Lpf2::BatteryType::NORMAL);
 #else
     hub.init();
 #endif
 }
 
-auto portALastDeviceType = Lpf2DeviceType::UNKNOWNDEVICE;
+auto portALastDeviceType = Lpf2::DeviceType::UNKNOWNDEVICE;
 bool isSubscribed = false;
 
 void loop()
@@ -97,7 +97,7 @@ void loop()
     }
 
     // a way to reset
-    if (portA.getDeviceType() == Lpf2DeviceType::TECHNIC_LARGE_LINEAR_MOTOR)
+    if (portA.getDeviceType() == Lpf2::DeviceType::TECHNIC_LARGE_LINEAR_MOTOR)
     {
         ESP.restart();
     }
@@ -137,7 +137,7 @@ void loop()
             printedInfos = true;
         }
 
-        auto &r_portA = *hub.getPort(Lpf2PortNum(Lpf2ControlPlusHubPort::A));
+        auto &r_portA = *hub.getPort(Lpf2::PortNum(Lpf2::ControlPlusHubPort::A));
         if (r_portA.deviceConnected())
         {
             static bool portASetupDone = false;
@@ -147,43 +147,43 @@ void loop()
                 portASetupDone = true;
             }
 
-            if (r_portA.getDeviceType() == Lpf2DeviceType::TECHNIC_COLOR_SENSOR)
+            if (r_portA.getDeviceType() == Lpf2::DeviceType::TECHNIC_COLOR_SENSOR)
             {
-                auto device = new TechnicColorSensor(r_portA);
+                auto device = new Lpf2::Devices::TechnicColorSensor(r_portA);
     
                 switch (device->getColorIdx())
                 {
-                case Lpf2Color::BLACK:
+                case Lpf2::ColorIDX::BLACK:
                     BuitlInRGB_setColor(0, 0, 0);
                     break;
-                case Lpf2Color::BLUE:
+                case Lpf2::ColorIDX::BLUE:
                     BuitlInRGB_setColor(0, 0, 50);
                     break;
-                case Lpf2Color::GREEN:
+                case Lpf2::ColorIDX::GREEN:
                     BuitlInRGB_setColor(0, 50, 0);
                     break;
-                case Lpf2Color::RED:
+                case Lpf2::ColorIDX::RED:
                     BuitlInRGB_setColor(50, 0, 0);
                     break;
-                case Lpf2Color::WHITE:
+                case Lpf2::ColorIDX::WHITE:
                     BuitlInRGB_setColor(50, 50, 50);
                     break;
-                case Lpf2Color::YELLOW:
+                case Lpf2::ColorIDX::YELLOW:
                     BuitlInRGB_setColor(50, 50, 0);
                     break;
-                case Lpf2Color::ORANGE:
+                case Lpf2::ColorIDX::ORANGE:
                     BuitlInRGB_setColor(50, 20, 0);
                     break;
-                case Lpf2Color::PURPLE:
+                case Lpf2::ColorIDX::PURPLE:
                     BuitlInRGB_setColor(30, 0, 30);
                     break;
-                case Lpf2Color::PINK:
+                case Lpf2::ColorIDX::PINK:
                     BuitlInRGB_setColor(50, 0, 20);
                     break;
-                case Lpf2Color::LIGHTBLUE:
+                case Lpf2::ColorIDX::LIGHTBLUE:
                     BuitlInRGB_setColor(0, 20, 50);
                     break;
-                case Lpf2Color::CYAN:
+                case Lpf2::ColorIDX::CYAN:
                     BuitlInRGB_setColor(0, 50, 50);
                     break;
     

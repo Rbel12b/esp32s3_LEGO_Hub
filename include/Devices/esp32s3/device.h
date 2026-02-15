@@ -1,7 +1,7 @@
 #pragma once
-#include "config.hpp"
-#include "UART/UART.hpp"
-#include "Lpf2Local/IO/IO.hpp"
+#include "Lpf2/config.hpp"
+#include "Lpf2/Local/IO/UART.hpp"
+#include "Lpf2/Local/IO/IO.hpp"
 
 #ifdef ESP32
 
@@ -14,7 +14,7 @@ class Esp32s3MotorPWM;
 using Lpf2UartPort = Esp32s3Uart;
 using Lpf2PwmPort = Esp32s3MotorPWM;
 
-class Esp32s3Uart : public Lpf2Uart
+class Esp32s3Uart : public Lpf2::Local::Uart
 {
 public:
     explicit Esp32s3Uart(int uart_num)
@@ -149,7 +149,7 @@ private:
 
 #include "driver/mcpwm.h"
 
-class Esp32s3MotorPWM : public Lpf2PWM
+class Esp32s3MotorPWM : public Lpf2::Local::PWM
 {
 public:
     explicit Esp32s3MotorPWM() = default;
@@ -203,17 +203,17 @@ private:
     uint32_t freq_ = 1000;
 };
 
-class Esp32s3IO : public Lpf2IO
+class Esp32s3IO : public Lpf2::Local::IO
 {
 public:
     Esp32s3IO(int uartNum) : m_uart(uartNum) {}
 
-    Lpf2PWM *getPWM() override
+    Lpf2::Local::PWM *getPWM() override
     {
         return &m_pwm;
     }
 
-    Lpf2Uart *getUart() override
+    Lpf2::Local::Uart *getUart() override
     {
         return &m_uart;
     }
