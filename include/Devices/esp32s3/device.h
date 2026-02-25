@@ -27,8 +27,6 @@ public:
                int id1_pin = -1,
                int id2_pin = -1)
     {
-        rx_pin_ = id1_pin;
-        tx_pin_ = id2_pin;
         id1_pin_ = id1_pin;
         id2_pin_ = id2_pin;
         config_ = config;
@@ -89,22 +87,22 @@ public:
         {
             // Detach UART pins → high impedance
             serial_.end();
-            if (rx_pin_ >= 0)
-                pinMode(rx_pin_, INPUT);
-            if (tx_pin_ >= 0)
-                pinMode(tx_pin_, INPUT);
+            if (id2_pin_ >= 0)
+                pinMode(id2_pin_, INPUT);
+            if (id1_pin_ >= 0)
+                pinMode(id1_pin_, INPUT);
         }
         else
         {
             // Reattach UART pins
-            if (rx_pin_ >= 0 || tx_pin_ >= 0)
+            if (id2_pin_ >= 0 || id1_pin_ >= 0)
             {
-                if (rx_pin_ >= 0)
-                    pinMode(rx_pin_, INPUT);
-                if (tx_pin_ >= 0)
-                    pinMode(tx_pin_, INPUT);
+                if (id2_pin_ >= 0)
+                    pinMode(id2_pin_, INPUT);
+                if (id1_pin_ >= 0)
+                    pinMode(id1_pin_, INPUT);
                 serial_.end();
-                serial_.begin(baud_, config_, rx_pin_, tx_pin_);
+                serial_.begin(baud_, config_, id2_pin_, id1_pin_);
             }
         }
     }
@@ -136,8 +134,6 @@ public:
 private:
     HardwareSerial serial_;
 
-    int rx_pin_ = -1;
-    int tx_pin_ = -1;
     int id1_pin_ = -1;
     int id2_pin_ = -1;
 

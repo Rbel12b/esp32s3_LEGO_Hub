@@ -14,6 +14,10 @@ void ExtSerialGPIO::begin()
 {
     LPF2_LOG_D("Initializing ExtSerialGPIO with crystal frequency: %u", crystal_freq);
     sc.begin(crystal_freq, 115200);
+    for (uint8_t pin = 0; pin < 8; pin++)
+    {
+        sc.pinMode(pin, INPUT);
+    }
 }
 
 Lpf2ExtSerial::Lpf2ExtSerial(ExtSerialGPIO *parent)
@@ -41,6 +45,9 @@ void Lpf2ExtSerial::setBaudrate(uint32_t baudrate)
 {
     baud_ = baudrate;
     m_parent->sc.begin(m_parent->crystal_freq, baudrate);
+    setUartPinsState(m_uartPinState);
+    LPF2_LOG_D("Baudrate set to %u", baudrate);
+    m_parent->sc.flush();
 }
 
 size_t Lpf2ExtSerial::write(const uint8_t *data, size_t length)
@@ -69,6 +76,7 @@ void Lpf2ExtSerial::flush()
 
 void Lpf2ExtSerial::setUartPinsState(bool highZ)
 {
+    m_uartPinState = highZ;
     LPF2_LOG_D("Setting uart pins state: highZ=%s", highZ ? "true" : "false");
 
     if (highZ)

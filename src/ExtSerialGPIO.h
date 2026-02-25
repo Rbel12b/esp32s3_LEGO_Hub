@@ -60,6 +60,7 @@ private:
     int txd_pin_ = -1;
 
     uint32_t baud_ = 115200;
+    bool m_uartPinState = true; // true = high impedance, false = active
 };
 
 class ExtSerialGPIO

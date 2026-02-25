@@ -9,14 +9,14 @@
 #define PORT_A_PWM_1 21
 #define PORT_A_PWM_2 10
 
-#define PORT_B_PWM_1 4
-#define PORT_B_PWM_2 5
+#define PORT_B_PWM_1 7
+#define PORT_B_PWM_2 6
 
 #define PORT_C_PWM_1 48
 #define PORT_C_PWM_2 47
 
-#define PORT_D_PWM_1 6
-#define PORT_D_PWM_2 7
+#define PORT_D_PWM_1 4
+#define PORT_D_PWM_2 5
 
 // Port ID pins
 #define PORT_A_ID_1 15
