@@ -17,6 +17,11 @@
 
 Lpf2::HubEmulation vHub("Technic Hub", Lpf2::HubType::CONTROL_PLUS_HUB);
 
+Lpf2::Virtual::Port vLEDPort;
+Lpf2::Virtual::GenericDevice vLED(Lpf2::DeviceDescriptors::HUB_LED);
+
+int vLEDWriteCallback(uint8_t mode, const std::vector<uint8_t> &data, void* userData);
+
 void setup()
 {
     heap_caps_check_integrity_all(true);
@@ -36,9 +41,14 @@ void setup()
     Ports_init();
     IMU_init(I2C_HW);
 
-    util_panStartTime = millis();
+    vLED.setWriteDataCallback(vLEDWriteCallback);
+    vLEDPort.attachDevice(&vLED);
 
     vHub.attachPort((Lpf2::PortNum)Lpf2::ControlPlusHubPort::A, &portA);
+    vHub.attachPort((Lpf2::PortNum)Lpf2::ControlPlusHubPort::B, &portB);
+    vHub.attachPort((Lpf2::PortNum)Lpf2::ControlPlusHubPort::C, &portC);
+    vHub.attachPort((Lpf2::PortNum)Lpf2::ControlPlusHubPort::D, &portD);
+    vHub.attachPort((Lpf2::PortNum)Lpf2::ControlPlusHubPort::LED, &vLEDPort);
     vHub.setUseBuiltInDevices(false); // We'll provide these
     vHub.start();
     vHub.setHubBatteryLevel(50);
@@ -83,4 +93,53 @@ void loop()
             }
         }
     }
+}
+
+int vLEDWriteCallback(uint8_t mode, const std::vector<uint8_t> &data, void* userData)
+{
+    if (mode == 0 && data.size() >= 1)
+    {
+        Lpf2::ColorIDX color = (Lpf2::ColorIDX)data[0];
+        switch (color)
+        {
+            case Lpf2::ColorIDX::BLACK:
+                BuitlInRGB_setColor(0, 0, 0);
+                break;
+            case Lpf2::ColorIDX::BLUE:
+                BuitlInRGB_setColor(0, 0, 50);
+                break;
+            case Lpf2::ColorIDX::GREEN:
+                BuitlInRGB_setColor(0, 50, 0);
+                break;
+            case Lpf2::ColorIDX::RED:
+                BuitlInRGB_setColor(50, 0, 0);
+                break;
+            case Lpf2::ColorIDX::WHITE:
+                BuitlInRGB_setColor(50, 50, 50);
+                break;
+            case Lpf2::ColorIDX::YELLOW:
+                BuitlInRGB_setColor(50, 50, 0);
+                break;
+            case Lpf2::ColorIDX::ORANGE:
+                BuitlInRGB_setColor(50, 20, 0);
+                break;
+            case Lpf2::ColorIDX::PURPLE:
+                BuitlInRGB_setColor(30, 0, 30);
+                break;
+            case Lpf2::ColorIDX::PINK:
+                BuitlInRGB_setColor(50, 0, 20);
+                break;
+            case Lpf2::ColorIDX::LIGHTBLUE:
+                BuitlInRGB_setColor(0, 20, 50);
+                break;
+            case Lpf2::ColorIDX::CYAN:
+                BuitlInRGB_setColor(0, 50, 50);
+                break;
+
+            default:
+                BuitlInRGB_setColor(0, 0, 0);
+                break;
+        }
+    }
+    return 0;
 }
