@@ -1,3 +1,6 @@
 [submodule "lib/UART_Bridge"]
 	path = lib/UART_Bridge
 	url = https://github.com/SandboxElectronics/UART_Bridge.git
+[submodule "lib/Lpf2"]
+	path = lib/Lpf2
+	url = https://github.com/Rbel12b/Lpf2
